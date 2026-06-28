@@ -12,29 +12,31 @@ export const useAuth = () => {
         setLoading(true)
         try {
             const data = await login({ email, password })
-
-
-            setUser(data.user)
+            if (data && data.user) {
+                setUser(data.user)
+                return { success: true }
+            }
+            return { success: false, error: "Invalid email or password" }
         } catch (err) {
-
+            return { success: false, error: err.response?.data?.message || "An error occurred during login" }
         }
         finally {
             setLoading(false)
         }
-
-
-
     }
 
     const handleRegister = async ({ username, email, password }) => {
         setLoading(true)
         try {
             const data = await register({ username, email, password })
-            setUser(data.user)
-
+            if (data && data.user) {
+                setUser(data.user)
+                return { success: true }
+            }
+            return { success: false, error: "Registration failed" }
         }
         catch (err) {
-
+            return { success: false, error: err.response?.data?.message || "An error occurred during registration" }
         }
         finally {
             setLoading(false)

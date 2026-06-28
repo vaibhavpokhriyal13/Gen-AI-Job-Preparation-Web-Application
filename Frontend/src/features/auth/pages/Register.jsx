@@ -4,7 +4,8 @@ import { useAuth } from '../hooks/useAuth'
 
 const Register = () => {
 
-    const naviagte=useNavigate()
+    const navigate=useNavigate()
+    const [error, setError] = useState("")
     const [username, setUsername] = useState("")
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
@@ -15,14 +16,20 @@ const Register = () => {
 
     const handleSubmit=async(e)=>{
         e.preventDefault()
-        await handleRegister({username,email,password})
-        navigate("/")
+        setError("")
+        const res = await handleRegister({username,email,password})
+        if (res.success) {
+            navigate("/")
+        } else {
+            setError(res.error)
+        }
     }
 
   return (
     <main>
   <div className="form-container">
     <h1>Register</h1>
+    {error && <p className="error-message" style={{ color: '#ff4d4d', marginBottom: '1rem', fontWeight: 'bold' }}>{error}</p>}
 
     <form onSubmit={handleSubmit}>
       <div className="input-group">
