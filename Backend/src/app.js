@@ -19,12 +19,12 @@ app.use(cors({
         if (!origin) return callback(null, true);
         const isAllowed = allowedOrigins.includes(origin) ||
             origin.startsWith("http://localhost:") ||
-            origin.endsWith(".vercel.app") ||
-            origin.endsWith(".onrender.com");
+            origin.includes("vercel.app") ||
+            origin.includes("onrender.com");
         if (isAllowed) {
             callback(null, true);
         } else {
-            callback(new Error("Not allowed by CORS"));
+            callback(null, false);
         }
     },
     credentials: true
