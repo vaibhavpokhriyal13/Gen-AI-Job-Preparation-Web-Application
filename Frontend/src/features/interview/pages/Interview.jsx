@@ -75,7 +75,13 @@ const Interview = () => {
     const [isLongWait, setIsLongWait] = useState(false)
     const [isLoggingOut, setIsLoggingOut] = useState(false)
     const [currentStepIndex, setCurrentStepIndex] = useState(0)
+    const [showNotice, setShowNotice] = useState(() => localStorage.getItem("hideFreeTierNotice") !== "true")
     const longWaitTimerRef = useRef(null)
+
+    const handleCloseNotice = () => {
+        setShowNotice(false)
+        localStorage.setItem("hideFreeTierNotice", "true")
+    }
 
     const navigate = useNavigate()
     const { handleLogout } = useAuth()
@@ -261,6 +267,19 @@ const Interview = () => {
 
                 {/* ── Center Content ── */}
                 <main className='interview-content'>
+                    {showNotice && (
+                        <div className='free-tier-notice'>
+                            <div className='free-tier-notice__icon'>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                            </div>
+                            <div className='free-tier-notice__content'>
+                                <strong>Gemini Free Tier Notice:</strong> PrepAi is powered by the free tier of Gemini AI. During peak traffic hours, generating your interview strategy or downloading the resume PDF may occasionally time out or fail. If you experience an issue, please retry 2-3 times.
+                            </div>
+                            <button className='free-tier-notice__close' onClick={handleCloseNotice} title="Dismiss notice">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                            </button>
+                        </div>
+                    )}
                     {activeNav === 'technical' && (
                         <section>
                             <div className='content-header'>
