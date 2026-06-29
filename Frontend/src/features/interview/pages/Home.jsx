@@ -9,7 +9,9 @@ const Home = () => {
     const [jobDescription, setJobDescription] = useState("")
     const [selfDescription, setSelfDescription] = useState("")
     const [isGenerating, setIsGenerating] = useState(false)
+    const [isLongWait, setIsLongWait] = useState(false)
     const resumeInputRef = useRef()
+    const longWaitTimerRef = useRef(null)
 
 
     const navigate = useNavigate()
@@ -28,6 +30,9 @@ const Home = () => {
             return;
         }
         setIsGenerating(true)
+        setIsLongWait(false)
+        // After 35s, show the "taking longer than usual" message
+        longWaitTimerRef.current = setTimeout(() => setIsLongWait(true), 35000)
         try {
             const data = await generateReport({ jobDescription, selfDescription, resumeFile })
             if (data && (data._id || data.id)) {
@@ -40,6 +45,8 @@ const Home = () => {
             alert("Something went wrong generating your report. Please try again.")
         } finally {
             setIsGenerating(false)
+            setIsLongWait(false)
+            clearTimeout(longWaitTimerRef.current)
         }
     }
 
@@ -47,6 +54,34 @@ const Home = () => {
 
     return (
         <div className='home-page'>
+
+            {/* ── Loading Overlay ── */}
+            {isGenerating && (
+                <div className='generating-overlay'>
+                    <div className='generating-overlay__card'>
+                        <div className='generating-overlay__spinner'>
+                            <svg viewBox="0 0 50 50" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="25" cy="25" r="20" fill="none" strokeWidth="4" />
+                            </svg>
+                        </div>
+                        {isLongWait ? (
+                            <>
+                                <p className='generating-overlay__title'>Taking longer than usual&hellip;</p>
+                                <p className='generating-overlay__sub'>The AI is still working on your plan. Please hang tight — don't close this page.</p>
+                            </>
+                        ) : (
+                            <>
+                                <p className='generating-overlay__title'>Generating your Interview Strategy&hellip;</p>
+                                <p className='generating-overlay__sub'>Please wait a moment while our AI analyses the job description and your profile.</p>
+                            </>
+                        )}
+                        <div className='generating-overlay__dots'>
+                            <span /><span /><span />
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Page Header */}
             <header className='page-header'>
                 <h1>Create Your Custom <span className='highlight'>Interview Plan</span></h1>
