@@ -473,7 +473,7 @@ Including every project and every skill is mandatory. Missing even one project f
     };
 
     const response = await ai.models.generateContent({
-        model: "gemini-3.5-flash",
+        model: "gemini-3.1-pro-preview",
         contents: prompt,
         config: {
             responseMimeType: "application/json",
