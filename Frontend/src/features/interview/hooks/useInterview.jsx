@@ -62,7 +62,8 @@ export const useInterview = () => {
             link.setAttribute("download", `resume_${interviewReportId}.pdf`)
             link.click()
         } catch (error) {
-            console.log(error)
+            console.error("Error downloading PDF:", error)
+            throw error // re-throw so callers can manage overlays/error messaging
         } finally {
             setLoading(false)
         }
