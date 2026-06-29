@@ -530,30 +530,55 @@ $severity-low: #3fb950;
     }
 
     &__ring {
-        width: 90px;
-        height: 90px;
-        border-radius: 50%;
+        width: 100px;
+        height: 100px;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    &__svg {
+        position: absolute;
+        inset: 0;
+        transform: rotate(-90deg);
+        width: 100%;
+        height: 100%;
+    }
+
+    &__bg-circle {
+        fill: none;
+        stroke: rgba($border-color, 0.5);
+        stroke-width: 4.5px;
+    }
+
+    &__bar-circle {
+        fill: none;
+        stroke-width: 4.5px;
+        stroke-linecap: round;
+        animation: scoreProgress 1.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+
+        .score--high & {
+            stroke: $severity-low; // Green
+        }
+        .score--mid & {
+            stroke: $severity-medium; // Yellow
+        }
+        .score--low & {
+            stroke: $severity-high; // Red
+        }
+    }
+
+    &__text {
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        border: 4px solid;
-
-        &.score--high {
-            border-color: $severity-low;
-        }
-
-        &.score--mid {
-            border-color: $severity-medium;
-        }
-
-        &.score--low {
-            border-color: $severity-high;
-        }
+        z-index: 2;
     }
 
     &__value {
-        font-size: 1.6rem;
+        font-size: 1.75rem;
         font-weight: 800;
         color: $text-primary;
         line-height: 1;
@@ -562,16 +587,32 @@ $severity-low: #3fb950;
     &__pct {
         font-size: 0.75rem;
         color: $text-muted;
-        margin-top: -2px;
+        margin-top: 1px;
     }
 
     &__sub {
         margin: 0;
         font-size: 0.75rem;
-        color: $severity-low;
         text-align: center;
+
+        .score--high ~ & {
+            color: $severity-low;
+        }
+        .score--mid ~ & {
+            color: $severity-medium;
+        }
+        .score--low ~ & {
+            color: $severity-high;
+        }
     }
 }
+
+@keyframes scoreProgress {
+    to {
+        stroke-dashoffset: var(--target-offset);
+    }
+}
+
 
 // Skill Gaps
 .skill-gaps {

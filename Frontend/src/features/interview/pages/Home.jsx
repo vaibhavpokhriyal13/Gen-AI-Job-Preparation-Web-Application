@@ -22,6 +22,7 @@ const Home = () => {
     const [selfDescription, setSelfDescription] = useState("")
     const [isGenerating, setIsGenerating] = useState(false)
     const [isLongWait, setIsLongWait] = useState(false)
+    const [isLoggingOut, setIsLoggingOut] = useState(false)
     const [selectedFile, setSelectedFile] = useState(null)
     const [currentStepIndex, setCurrentStepIndex] = useState(0)
     const resumeInputRef = useRef()
@@ -47,10 +48,16 @@ const Home = () => {
 
     const onLogoutClick = async () => {
         if (window.confirm("Are you sure you want to log out?")) {
-            await handleLogout()
-            navigate("/login")
+            setIsLoggingOut(true)
+            try {
+                await handleLogout()
+                navigate("/login")
+            } finally {
+                setIsLoggingOut(false)
+            }
         }
     }
+
 
 
     const handleFileChange = (e) => {
@@ -102,6 +109,24 @@ const Home = () => {
 
     return (
         <div className='home-page'>
+
+            {/* ── Logging Out Overlay ── */}
+            {isLoggingOut && (
+                <div className='generating-overlay'>
+                    <div className='generating-overlay__card'>
+                        <div className='generating-overlay__spinner'>
+                            <svg viewBox="0 0 50 50" xmlns="http://www.w3.org/2000/svg" style={{ animation: 'spinRotate 1.4s linear infinite', width: '56px', height: '56px' }}>
+                                <circle cx="25" cy="25" r="20" fill="none" stroke="#ff2d78" strokeWidth="4" strokeLinecap="round" style={{ strokeDasharray: '80 120', animation: 'spinDash 1.4s ease-in-out infinite' }} />
+                            </svg>
+                        </div>
+                        <p className='generating-overlay__title' style={{ color: '#e6edf3' }}>Logging Out&hellip;</p>
+                        <p className='generating-overlay__sub'>Please wait a moment while we end your session.</p>
+                        <div className='generating-overlay__dots'>
+                            <span /><span /><span />
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* ── Loading Overlay ── */}
             {isGenerating && (

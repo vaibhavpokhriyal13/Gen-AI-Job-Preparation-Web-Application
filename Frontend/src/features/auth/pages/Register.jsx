@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router'
 import { useAuth } from '../hooks/useAuth'
 import "../auth.form.scss"
@@ -11,6 +11,7 @@ const Register = () => {
     const [password, setPassword] = useState("")
     const [confirmPassword, setConfirmPassword] = useState("")
     const [isSubmitting, setIsSubmitting] = useState(false)
+    const [isWakeUpNotice, setIsWakeUpNotice] = useState(false)
 
     const { loading, handleRegister } = useAuth()
 
@@ -34,22 +35,42 @@ const Register = () => {
         }
     }
 
+    // Detect if the session verification request is taking long (sleeping Render server)
+    useEffect(() => {
+        if (loading) {
+            const timer = setTimeout(() => setIsWakeUpNotice(true), 6000)
+            return () => clearTimeout(timer)
+        } else {
+            setIsWakeUpNotice(false)
+        }
+    }, [loading])
+
     if (loading) {
         return (
             <main style={{ background: '#0d1117', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <div className='generating-overlay' style={{ position: 'relative', background: 'none', backdropFilter: 'none' }}>
-                    <div className='generating-overlay__card' style={{ boxShadow: 'none', border: 'none', background: 'none' }}>
+                    <div className='generating-overlay__card' style={{ boxShadow: 'none', border: 'none', background: 'none', maxWidth: '420px', width: '90%' }}>
                         <div className='generating-overlay__spinner'>
                             <svg viewBox="0 0 50 50" xmlns="http://www.w3.org/2000/svg" style={{ animation: 'spinRotate 1.4s linear infinite', width: '56px', height: '56px' }}>
                                 <circle cx="25" cy="25" r="20" fill="none" stroke="#ff2d78" strokeWidth="4" strokeLinecap="round" style={{ strokeDasharray: '80 120', animation: 'spinDash 1.4s ease-in-out infinite' }} />
                             </svg>
                         </div>
-                        <p className='generating-overlay__title' style={{ color: '#e6edf3', marginTop: '1.25rem', fontWeight: 'bold' }}>Verifying your session&hellip;</p>
+                        {isWakeUpNotice ? (
+                            <>
+                                <p className='generating-overlay__title' style={{ color: '#e6edf3', marginTop: '1.25rem', fontWeight: 'bold' }}>Waking up the free server&hellip;</p>
+                                <p className='generating-overlay__sub' style={{ color: '#7d8590', fontSize: '0.8rem', marginTop: '0.5rem', lineHeight: '1.5' }}>
+                                    Render free servers spin down after 15 minutes of inactivity. Waking it up can take 40-50 seconds. We appreciate your patience!
+                                </p>
+                            </>
+                        ) : (
+                            <p className='generating-overlay__title' style={{ color: '#e6edf3', marginTop: '1.25rem', fontWeight: 'bold' }}>Verifying your session&hellip;</p>
+                        )}
                     </div>
                 </div>
             </main>
         )
     }
+
 
     return (
         <main>

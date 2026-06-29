@@ -1,12 +1,36 @@
 const express = require("express")
 const cookieParser = require("cookie-parser")
-
 const cors = require("cors")
-
+const helmet = require("helmet")
+const mongoSanitize = require("express-mongo-sanitize")
+const rateLimit = require("express-rate-limit")
 
 const app = express()
 
 app.set("trust proxy", 1);
+
+// Trust proxy header setup and basic secure HTTP headers
+app.use(helmet())
+
+// Prevent NoSQL Injection attacks
+app.use(mongoSanitize())
+
+// Limiters to prevent service spam and brute forcing
+const apiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 150,
+    message: { message: "Too many requests from this IP, please try again after 15 minutes" },
+    standardHeaders: true,
+    legacyHeaders: false,
+})
+
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 30,
+    message: { message: "Too many login/registration attempts, please try again after 15 minutes" },
+    standardHeaders: true,
+    legacyHeaders: false,
+})
 
 const allowedOrigins = [
     process.env.CLIENT_URL,
@@ -36,8 +60,8 @@ app.use(cookieParser())
 const authRouter = require("./routes/auth.routes")
 const interviewRouter = require("./routes/interview.routes")
 
-app.use("/api/auth", authRouter)
-app.use("/api/interview", interviewRouter)
-
+app.use("/api/auth", authLimiter, authRouter)
+app.use("/api/interview", apiLimiter, interviewRouter)
 
 module.exports = app
+

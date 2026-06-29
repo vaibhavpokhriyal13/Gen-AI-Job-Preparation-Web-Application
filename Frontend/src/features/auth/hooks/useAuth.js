@@ -39,16 +39,13 @@ export const useAuth = () => {
     }
 
     const handleLogout = async () => {
-        setLoading(true)
         try {
             await logout()
-            setUser(null) // this triggers the useEffect in AuthContext to clear localStorage
+            setUser(null)
         } catch (err) {
-            // Even if logout API fails, clear local session
             setUser(null)
         } finally {
-            localStorage.removeItem("auth_token") // always clear the token
-            setLoading(false)
+            localStorage.removeItem("auth_token")
         }
     }
 

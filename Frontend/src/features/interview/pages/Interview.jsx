@@ -73,6 +73,7 @@ const Interview = () => {
     const [activeNav, setActiveNav] = useState('technical')
     const [isDownloading, setIsDownloading] = useState(false)
     const [isLongWait, setIsLongWait] = useState(false)
+    const [isLoggingOut, setIsLoggingOut] = useState(false)
     const [currentStepIndex, setCurrentStepIndex] = useState(0)
     const longWaitTimerRef = useRef(null)
 
@@ -85,10 +86,16 @@ const Interview = () => {
 
     const onLogoutClick = async () => {
         if (window.confirm("Are you sure you want to log out?")) {
-            await handleLogout()
-            navigate("/login")
+            setIsLoggingOut(true)
+            try {
+                await handleLogout()
+                navigate("/login")
+            } finally {
+                setIsLoggingOut(false)
+            }
         }
     }
+
 
     // Fetch report when the page mounts or when ID in URL changes
     useEffect(() => {
@@ -155,6 +162,24 @@ const Interview = () => {
 
     return (
         <div className='interview-page'>
+
+            {/* ── Logging Out Overlay ── */}
+            {isLoggingOut && (
+                <div className='generating-overlay'>
+                    <div className='generating-overlay__card'>
+                        <div className='generating-overlay__spinner'>
+                            <svg viewBox="0 0 50 50" xmlns="http://www.w3.org/2000/svg" style={{ animation: 'spinRotate 1.4s linear infinite', width: '56px', height: '56px' }}>
+                                <circle cx="25" cy="25" r="20" fill="none" stroke="#ff2d78" strokeWidth="4" strokeLinecap="round" style={{ strokeDasharray: '80 120', animation: 'spinDash 1.4s ease-in-out infinite' }} />
+                            </svg>
+                        </div>
+                        <p className='generating-overlay__title' style={{ color: '#e6edf3' }}>Logging Out&hellip;</p>
+                        <p className='generating-overlay__sub'>Please wait a moment while we end your session.</p>
+                        <div className='generating-overlay__dots'>
+                            <span /><span /><span />
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* ── Loading Overlay for PDF generation ── */}
             {isDownloading && (
@@ -282,10 +307,29 @@ const Interview = () => {
                     <div className='match-score'>
                         <p className='match-score__label'>Match Score</p>
                         <div className={`match-score__ring ${scoreColor}`}>
-                            <span className='match-score__value'>{report.matchScore}</span>
-                            <span className='match-score__pct'>%</span>
+                            <svg className='match-score__svg' viewBox="0 0 80 80">
+                                <circle className='match-score__bg-circle' cx="40" cy="40" r="34" />
+                                <circle 
+                                    className='match-score__bar-circle' 
+                                    cx="40" 
+                                    cy="40" 
+                                    r="34" 
+                                    style={{
+                                        strokeDasharray: 213,
+                                        strokeDashoffset: 213,
+                                        "--target-offset": 213 - (213 * report.matchScore) / 100
+                                    }}
+                                />
+                            </svg>
+                            <div className='match-score__text'>
+                                <span className='match-score__value'>{report.matchScore}</span>
+                                <span className='match-score__pct'>%</span>
+                            </div>
                         </div>
-                        <p className='match-score__sub'>Strong match for this role</p>
+                        <p className='match-score__sub'>
+                            {report.matchScore >= 80 ? 'Strong match for this role' :
+                             report.matchScore >= 60 ? 'Moderate match for this role' : 'Requires key preparations'}
+                        </p>
                     </div>
 
                     <div className='sidebar-divider' />
