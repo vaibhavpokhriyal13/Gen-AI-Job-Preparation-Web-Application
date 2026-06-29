@@ -92,9 +92,22 @@ const Interview = () => {
     // Show loading / prevent crash if report is not yet loaded
     if (loading || !report || (report._id !== interviewId && report.id !== interviewId)) {
         return (
-            <main style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', color: 'white', background: '#121212' }}>
-                Loading your interview plan...
-            </main>
+            <div className='interview-page' style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#0d1117' }}>
+                <div className='generating-overlay' style={{ position: 'relative', background: 'none', backdropFilter: 'none' }}>
+                    <div className='generating-overlay__card' style={{ boxShadow: 'none', border: 'none', background: 'none' }}>
+                        <div className='generating-overlay__spinner'>
+                            <svg viewBox="0 0 50 50" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="25" cy="25" r="20" fill="none" strokeWidth="4" />
+                            </svg>
+                        </div>
+                        <p className='generating-overlay__title' style={{ marginTop: '1.25rem' }}>Loading your Interview Plan&hellip;</p>
+                        <p className='generating-overlay__sub'>Please wait while we retrieve your customized preparation details.</p>
+                        <div className='generating-overlay__dots' style={{ marginTop: '1rem' }}>
+                            <span /><span /><span />
+                        </div>
+                    </div>
+                </div>
+            </div>
         )
     }
 
