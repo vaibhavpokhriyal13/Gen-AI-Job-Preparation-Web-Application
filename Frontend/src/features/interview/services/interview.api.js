@@ -30,11 +30,9 @@ export const generateInterviewReport = async ({ jobDescription, selfDescription,
     formData.append("jobDescription", jobDescription);
     formData.append("selfDescription", selfDescription);
 
-    const response = await api.post("/api/interview/", formData, {
-        headers: {
-            "Content-Type": "multipart/form-data"
-        }
-    })
+    // Do NOT set Content-Type manually — axios will auto-set multipart/form-data
+    // WITH the correct boundary parameter. Setting it manually breaks multer on mobile.
+    const response = await api.post("/api/interview/", formData)
 
     return response.data
 }
