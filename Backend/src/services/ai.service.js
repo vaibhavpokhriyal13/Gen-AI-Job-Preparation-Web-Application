@@ -177,27 +177,53 @@ async function generatePdfFromHtml(htmlContent) {
         args: [
             "--no-sandbox",
             "--disable-setuid-sandbox",
-            "--disable-dev-shm-usage"
+            "--disable-dev-shm-usage",
+            "--disable-web-security",
+            "--disable-features=IsolateOrigins,site-per-process"
         ]
     });
+
     const page = await browser.newPage()
-    await page.setContent(htmlContent, {
-        waitUntil: "networkidle0"
-    })
 
-    const pdfBuffer = await page.pdf({
-        format: "A4", printBackground: true,
-        margin: {
-            top: "15mm",
-            right: "5mm",
-            bottom: "15mm",
-            left: "5mm"
-        }
-    })
-    await browser.close()
-    return pdfBuffer
+    try {
+        // Block external resources (fonts, images from CDNs) that cause networkidle0 to hang on Render
+        await page.setRequestInterception(true)
+        page.on("request", (req) => {
+            const resourceType = req.resourceType()
+            const url = req.url()
+            // Block external font/image requests — keep only inline styles & local resources
+            if (["image", "media"].includes(resourceType)) {
+                req.abort()
+            } else if (resourceType === "font" && url.startsWith("http")) {
+                req.abort()
+            } else {
+                req.continue()
+            }
+        })
 
+        // Use domcontentloaded instead of networkidle0 — doesn't wait for external requests
+        await page.setContent(htmlContent, {
+            waitUntil: "domcontentloaded",
+            timeout: 60000
+        })
+
+        const pdfBuffer = await page.pdf({
+            format: "A4",
+            printBackground: true,
+            margin: {
+                top: "15mm",
+                right: "5mm",
+                bottom: "15mm",
+                left: "5mm"
+            }
+        })
+
+        return pdfBuffer
+    } finally {
+        await browser.close()
+    }
 }
+
 
 
 async function generateResumePDF({ resume, selfDescription, jobDescription }) {
