@@ -101,6 +101,73 @@ $severity-low: #3fb950;
         }
     }
 
+    &__logout {
+        display: none; // Hidden by default on desktop
+
+        &--mobile {
+            @media (max-width: 768px) {
+                display: flex;
+                align-items: center;
+                gap: 0.6rem;
+                padding: 0.5rem 0.75rem;
+                background: none;
+                border: none;
+                border-radius: 0.5rem;
+                color: #ff4d4d;
+                font-family: $font-stack;
+                font-size: 0.8rem;
+                cursor: pointer;
+                white-space: nowrap;
+                flex-shrink: 0;
+
+                svg {
+                    stroke: #ff4d4d;
+                }
+
+                &:hover {
+                    background-color: rgba(#ff4d4d, 0.1);
+                }
+            }
+        }
+    }
+
+    &__actions-desktop {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+
+        @media (max-width: 768px) {
+            display: none !important; // Hide action buttons container on mobile
+        }
+    }
+
+    &__logout-desktop {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 0.65rem 0.75rem;
+        background: none;
+        border: 1px solid rgba(#ff4d4d, 0.3);
+        border-radius: 0.5rem;
+        color: #ff4d4d;
+        font-family: $font-stack;
+        font-size: 0.875rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background-color 0.15s, border-color 0.15s;
+
+        svg {
+            stroke: #ff4d4d;
+        }
+
+        &:hover {
+            background-color: rgba(#ff4d4d, 0.1);
+            border-color: #ff4d4d;
+        }
+    }
+
+
     &__label {
         font-size: 0.7rem;
         font-weight: 600;
