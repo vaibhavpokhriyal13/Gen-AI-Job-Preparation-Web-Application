@@ -149,8 +149,8 @@ const Interview = () => {
                                 <circle cx="25" cy="25" r="20" fill="none" strokeWidth="4" />
                             </svg>
                         </div>
-                        <p className='generating-overlay__title' style={{ marginTop: '1.25rem' }}>Loading your Interview Plan&hellip;</p>
-                        <p className='generating-overlay__sub'>Please wait while we retrieve your customized Interview Plan.</p>
+                        <p className='generating-overlay__title' style={{ marginTop: '1.25rem' }}>Processing request&hellip;</p>
+                        <p className='generating-overlay__sub'>Please wait a moment while we complete this action...</p>
                         <div className='generating-overlay__dots' style={{ marginTop: '1rem' }}>
                             <span /><span /><span />
                         </div>
@@ -202,7 +202,7 @@ const Interview = () => {
                             </>
                         ) : (
                             <>
-                                <p className='generating-overlay__title'>Downloading your Resume&hellip;</p>
+                                <p className='generating-overlay__title'>Loading your Interview Strategy&hellip;</p>
                                 <p className='generating-overlay__sub'>{PDF_STEPS[currentStepIndex]}</p>
                             </>
                         )}
@@ -269,7 +269,7 @@ const Interview = () => {
                     {showNotice && (
                         <div className='free-tier-notice'>
                             <div className='free-tier-notice__icon'>
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>
                             </div>
                             <div className='free-tier-notice__content'>
                                 <strong>Gemini Free Tier Notice:</strong> PrepAi is powered by the free tier of Gemini AI. During peak traffic hours, generating your interview strategy or downloading the resume PDF may occasionally time out or fail. If you experience an issue, please retry 2-3 times.
@@ -333,11 +333,11 @@ const Interview = () => {
                         <div className={`match-score__ring ${scoreColor}`}>
                             <svg className='match-score__svg' viewBox="0 0 80 80">
                                 <circle className='match-score__bg-circle' cx="40" cy="40" r="34" />
-                                <circle 
-                                    className='match-score__bar-circle' 
-                                    cx="40" 
-                                    cy="40" 
-                                    r="34" 
+                                <circle
+                                    className='match-score__bar-circle'
+                                    cx="40"
+                                    cy="40"
+                                    r="34"
                                     style={{
                                         strokeDasharray: 213,
                                         strokeDashoffset: 213,
@@ -352,7 +352,7 @@ const Interview = () => {
                         </div>
                         <p className='match-score__sub'>
                             {report.matchScore >= 80 ? 'Strong match for this role' :
-                             report.matchScore >= 60 ? 'Moderate match for this role' : 'Requires key preparations'}
+                                report.matchScore >= 60 ? 'Moderate match for this role' : 'Requires key preparations'}
                         </p>
                     </div>
 
