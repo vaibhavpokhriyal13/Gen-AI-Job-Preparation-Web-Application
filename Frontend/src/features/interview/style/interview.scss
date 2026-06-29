@@ -79,6 +79,45 @@ $severity-low: #3fb950;
     justify-content: space-between;
     gap: 0.25rem;
 
+    .interview-brand-header {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+        padding-left: 0.25rem;
+
+        @media (max-width: 768px) {
+            display: none; // Hide logo header on mobile horizontal tab navbar
+        }
+    }
+
+    .interview-brand-logo {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        background: linear-gradient(135deg, $accent 0%, darken($accent, 15%) 100%);
+        color: #fff;
+        border-radius: 0.35rem;
+        padding: 0.25rem;
+        box-sizing: border-box;
+        box-shadow: 0 4px 8px rgba($accent, 0.3);
+
+        svg {
+            width: 100%;
+            height: 100%;
+        }
+    }
+
+    .interview-brand-name {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: $text-primary;
+        letter-spacing: -0.01em;
+    }
+
+
     // ── Mobile: horizontal scrollable tab bar ──
     @media (max-width: 768px) {
         width: 100%;
