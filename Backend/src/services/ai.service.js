@@ -144,7 +144,7 @@ Job Description: ${jobDescription}
     };
 
     const response = await ai.models.generateContent({
-        model: "gemini-3.5-flash",
+        model: "gemini-3-flash-preview",
         contents: prompt,
         config: {
             responseMimeType: "application/json",
@@ -290,7 +290,7 @@ CONTENT GENERATION ENGINE (STRICT RULES):
     };
 
     const response = await ai.models.generateContent({
-        model: "gemini-3.5-flash",
+        model: "gemini-3-flash-preview",
         contents: prompt,
         config: {
             responseMimeType: "application/json",
