@@ -3,14 +3,27 @@ import "../style/home.scss"
 import { useInterview } from '../hooks/useInterview'
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router'
+import { useAuth } from '../../auth/hooks/useAuth'
+
+const GENERATION_STEPS = [
+    "Analyzing target job requirements & core skills...",
+    "Parsing your profile details and experience...",
+    "Calculating candidate matches and key gaps...",
+    "Generating customized technical interview questions...",
+    "Formulating behavioral scenario questions...",
+    "Creating your personalized preparation road map...",
+    "Finalizing and formatting your strategy report..."
+];
 
 const Home = () => {
     const { generateReport, getAllReports, reports } = useInterview()
+    const { handleLogout } = useAuth()
     const [jobDescription, setJobDescription] = useState("")
     const [selfDescription, setSelfDescription] = useState("")
     const [isGenerating, setIsGenerating] = useState(false)
     const [isLongWait, setIsLongWait] = useState(false)
     const [selectedFile, setSelectedFile] = useState(null)
+    const [currentStepIndex, setCurrentStepIndex] = useState(0)
     const resumeInputRef = useRef()
     const longWaitTimerRef = useRef(null)
 
@@ -19,6 +32,26 @@ const Home = () => {
     useEffect(() => {
         getAllReports()
     }, [])
+
+    // Cycle through generation steps while loading
+    useEffect(() => {
+        if (!isGenerating) {
+            setCurrentStepIndex(0)
+            return
+        }
+        const interval = setInterval(() => {
+            setCurrentStepIndex((prev) => (prev + 1) % GENERATION_STEPS.length)
+        }, 4500)
+        return () => clearInterval(interval)
+    }, [isGenerating])
+
+    const onLogoutClick = async () => {
+        if (window.confirm("Are you sure you want to log out?")) {
+            await handleLogout()
+            navigate("/login")
+        }
+    }
+
 
     const handleFileChange = (e) => {
         const file = e.target.files[0]
@@ -87,7 +120,7 @@ const Home = () => {
                         ) : (
                             <>
                                 <p className='generating-overlay__title'>Generating your Interview Strategy&hellip;</p>
-                                <p className='generating-overlay__sub'>Please wait a moment while our AI analyses the job description and your profile.</p>
+                                <p className='generating-overlay__sub'>{GENERATION_STEPS[currentStepIndex]}</p>
                             </>
                         )}
                         <div className='generating-overlay__dots'>
@@ -98,6 +131,11 @@ const Home = () => {
             )}
 
             {/* Page Header */}
+            <button className='home-logout-btn' onClick={onLogoutClick}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>
+                Log Out
+            </button>
+
             <header className='page-header'>
                 <h1>Create Your Custom <span className='highlight'>Interview Plan</span></h1>
                 <p>Let our AI analyze the job requirements and your unique profile to build a winning strategy.</p>

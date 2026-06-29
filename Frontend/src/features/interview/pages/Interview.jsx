@@ -59,15 +59,26 @@ const RoadMapDay = ({ day }) => (
     </div>
 )
 
+const PDF_STEPS = [
+    "Starting print rendering engine...",
+    "Injecting document styling presets...",
+    "Formatting roadmap timeline structures...",
+    "Embedding your matching skill profile...",
+    "Compiling and outputting final A4 PDF..."
+];
+
 // ── Main Component ────────────────────────────────────────────────────────────
+
 const Interview = () => {
     const [activeNav, setActiveNav] = useState('technical')
     const [isDownloading, setIsDownloading] = useState(false)
     const [isLongWait, setIsLongWait] = useState(false)
+    const [currentStepIndex, setCurrentStepIndex] = useState(0)
     const longWaitTimerRef = useRef(null)
 
     const navigate = useNavigate()
     const { handleLogout } = useAuth()
+
 
     const { interviewId } = useParams() // Get ID from url parameters
     const { loading, getReportById, report, getResumePdf } = useInterview()
@@ -85,6 +96,19 @@ const Interview = () => {
             getReportById(interviewId)
         }
     }, [interviewId])
+
+    // Cycle through PDF steps while loading
+    useEffect(() => {
+        if (!isDownloading) {
+            setCurrentStepIndex(0)
+            return
+        }
+        const interval = setInterval(() => {
+            setCurrentStepIndex((prev) => (prev + 1) % PDF_STEPS.length)
+        }, 4500)
+        return () => clearInterval(interval)
+    }, [isDownloading])
+
 
     const handleDownloadPdf = async () => {
         setIsDownloading(true)
@@ -149,7 +173,7 @@ const Interview = () => {
                         ) : (
                             <>
                                 <p className='generating-overlay__title'>Generating your Resume PDF&hellip;</p>
-                                <p className='generating-overlay__sub'>Please wait a moment while we build and format your PDF file.</p>
+                                <p className='generating-overlay__sub'>{PDF_STEPS[currentStepIndex]}</p>
                             </>
                         )}
                         <div className='generating-overlay__dots'>
