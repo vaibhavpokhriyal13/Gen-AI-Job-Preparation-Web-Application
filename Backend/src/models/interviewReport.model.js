@@ -132,6 +132,14 @@ const interviewReportSchema=new mongoose.Schema({
     title:{
         type:String,
         required:[true,"Title is required"]
+    },
+    isValid:{
+        type:Boolean,
+        default:true
+    },
+    errorMessage:{
+        type:String,
+        default:""
     }
 },
 

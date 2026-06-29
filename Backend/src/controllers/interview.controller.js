@@ -40,6 +40,13 @@ async function generateInterviewReportController(req, res) {
             jobDescription
         });
 
+        // Validation safety check for gibberish/keyboard-mashing inputs
+        if (interviewReportByAi.isValid === false) {
+            return res.status(400).json({
+                message: interviewReportByAi.errorMessage || "The provided job description or candidate profile could not be parsed as valid text. Please verify your input."
+            });
+        }
+
         const finalResumeString = typeof resumeContent === 'string' ? resumeContent : (resumeContent?.text || "");
 
         const { resume: aiEchoedResume, ...cleanAiData } = interviewReportByAi;

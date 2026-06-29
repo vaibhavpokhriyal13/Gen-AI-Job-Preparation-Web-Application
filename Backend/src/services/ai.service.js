@@ -10,6 +10,8 @@ const ai = new GoogleGenAI({
 
 // 1. Zod Schema Definition
 const interviewReportSchema = z.object({
+    isValid: z.boolean().describe("True if the jobDescription and candidate profile/resume are valid, readable, and meaningful text in any language. False if either is gibberish, spam, keyboard-mashing, or completely irrelevant."),
+    errorMessage: z.string().describe("A helpful message explaining why the inputs are invalid. Should be empty if isValid is true."),
     matchScore: z.number().describe("A score between 0 and 100 indicating how well the candidate's profile matches the job describe"),
     technicalQuestion: z.array(z.object({
         question: z.string().describe("The technical question can be asked in the interview"),
@@ -38,10 +40,18 @@ async function generateInterviewReport({ resume, selfDescription, jobDescription
     const prompt = `You are an expert technical recruiter and engineering manager. 
 Analyze the candidate's Resume and Self Description against the provided Job Description.
 Generate a highly detailed interview preparation report in strict JSON format.
+
+CRITICAL QUALITY CHECK:
+1. Evaluate if the provided "Job Description" and "Resume/Self Description" are valid, meaningful text in English or any other language.
+2. If either input is gibberish, spam, keyboard mashing (e.g. "asdfasdf", "qwerty", "xyzxyz", "asdasd"), completely blank, or irrelevant random letters, you MUST set "isValid" to false and set a clear, polite explanation in "errorMessage" (e.g. "The job description you pasted contains invalid random letters. Please provide a valid job listing."). In this case, set "matchScore" to 0, "title" to "Invalid Input", and return empty arrays for "technicalQuestion", "behavioralQuestion", "skillGaps", and "preparationPlan".
+3. If they are valid, set "isValid" to true, "errorMessage" to "", and proceed to generate the preparation report.
+
 CRITICAL INSTRUCTION:
 1. Provide a comprehensive 7-day daily preparation plan (days 1 through 7) under "preparationPlan".
 2. YOUR OUTPUT MUST EXACTLY MATCH THIS JSON STRUCTURE AND KEYS:
 {
+  "isValid": true,
+  "errorMessage": "",
   "matchScore": 85,
   "title": "Insert Job Title Here",
   "technicalQuestion": [
@@ -75,6 +85,8 @@ Job Description: ${jobDescription}
     const responseSchema = {
         type: "object",
         properties: {
+            isValid: { type: "boolean" },
+            errorMessage: { type: "string" },
             matchScore: { type: "number" },
             title: { type: "string" },
             technicalQuestion: {
@@ -128,7 +140,7 @@ Job Description: ${jobDescription}
                 }
             }
         },
-        required: ["matchScore", "title", "technicalQuestion", "behavioralQuestion", "skillGaps", "preparationPlan"]
+        required: ["isValid", "errorMessage", "matchScore", "title", "technicalQuestion", "behavioralQuestion", "skillGaps", "preparationPlan"]
     };
 
     const response = await ai.models.generateContent({

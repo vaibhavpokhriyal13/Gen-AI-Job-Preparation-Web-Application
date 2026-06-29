@@ -104,7 +104,8 @@ const Home = () => {
             }
         } catch (error) {
             console.error("Failed to generate report:", error);
-            alert("Something went wrong generating your report. Please try again.")
+            const errorMsg = error.response?.data?.message || "Something went wrong generating your report. Please try again.";
+            alert(errorMsg);
         } finally {
             setIsGenerating(false)
             setIsLongWait(false)
