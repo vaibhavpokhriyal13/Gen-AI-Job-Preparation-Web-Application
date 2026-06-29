@@ -100,8 +100,8 @@ const Interview = () => {
                                 <circle cx="25" cy="25" r="20" fill="none" strokeWidth="4" />
                             </svg>
                         </div>
-                        <p className='generating-overlay__title' style={{ marginTop: '1.25rem' }}>Loading your Interview Plan&hellip;</p>
-                        <p className='generating-overlay__sub'>Please wait while we retrieve your customized preparation details.</p>
+                        <p className='generating-overlay__title' style={{ marginTop: '1.25rem' }}>Downloading your Resume&hellip;</p>
+                        <p className='generating-overlay__sub'>Please wait while we retrieve your customized Resume.</p>
                         <div className='generating-overlay__dots' style={{ marginTop: '1rem' }}>
                             <span /><span /><span />
                         </div>
