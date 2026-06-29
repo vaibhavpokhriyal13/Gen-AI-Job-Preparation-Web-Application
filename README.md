@@ -3,6 +3,8 @@
 ### **AI-Powered Job Interview Preparation Platform**
 
 🔗 **Live Frontend URL**: [gen-ai-job-preparation-web-application.vercel.app](https://gen-ai-job-preparation-web-application.vercel.app)
+
+
 🔗 **Backend Service URL**: [gen-ai-job-preparation-web-application-5rhs.onrender.com](https://gen-ai-job-preparation-web-application-5rhs.onrender.com)
 
 PrepAi is a premium, modern SaaS web application designed to help job candidates prepare for technical and behavioral interviews. By analyzing a target job description alongside a candidate's resume (PDF) or self-description, PrepAi generates a custom preparation strategy, curated interview questions, a skill gap analysis, and a structured 7-day study roadmap.
