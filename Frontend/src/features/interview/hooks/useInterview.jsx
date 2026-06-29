@@ -15,12 +15,12 @@ export const useInterview = () => {
     const generateReport = async ({ jobDescription, selfDescription, resumeFile }) => {
         setLoading(true)
         try {
-
             const response = await generateInterviewReport({ jobDescription, selfDescription, resumeFile })
             setReport(response.interviewReport)
             return response.interviewReport
         } catch (error) {
-            console.log(error)
+            console.error("generateReport error:", error)
+            throw error // re-throw so Home.jsx can show the real error message
         } finally {
             setLoading(false)
         }

@@ -37,7 +37,9 @@ const Home = () => {
             }
         } catch (error) {
             console.error("Failed to generate report:", error);
-            alert("Something went wrong generating your report. Please try again.");
+            // Show the actual server error so it's easier to debug
+            const serverMessage = error?.response?.data?.message || error?.response?.data?.error || error?.message
+            alert(`Failed to generate report: ${serverMessage || "Unknown error. Please try again."}`)
         } finally {
             setIsGenerating(false)
         }
