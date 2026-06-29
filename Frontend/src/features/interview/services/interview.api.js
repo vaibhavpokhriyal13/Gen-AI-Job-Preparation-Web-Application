@@ -5,6 +5,17 @@ const api = axios.create({
     withCredentials: true,
 })
 
+// Attach JWT from localStorage as Authorization header on every request.
+// This is the mobile-safe fallback: cross-origin cookies are blocked on
+// Safari/iOS, so we send the token via header instead.
+api.interceptors.request.use((config) => {
+    const token = localStorage.getItem("auth_token")
+    if (token) {
+        config.headers["Authorization"] = `Bearer ${token}`
+    }
+    return config
+})
+
 /**
  * @description Service to generate interview report based on user self description,resume and job description.
  * 

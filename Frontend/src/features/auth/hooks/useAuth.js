@@ -14,6 +14,8 @@ export const useAuth = () => {
             const data = await login({ email, password })
             if (data && data.user) {
                 setUser(data.user)
+                // Store token in localStorage for mobile (cross-origin cookies are blocked)
+                if (data.token) localStorage.setItem("auth_token", data.token)
                 return { success: true }
             }
             return { success: false, error: "Invalid email or password" }
@@ -31,6 +33,7 @@ export const useAuth = () => {
             const data = await register({ username, email, password })
             if (data && data.user) {
                 setUser(data.user)
+                if (data.token) localStorage.setItem("auth_token", data.token)
                 return { success: true }
             }
             return { success: false, error: "Registration failed" }
@@ -52,6 +55,7 @@ export const useAuth = () => {
             // Even if logout API fails, clear local session
             setUser(null)
         } finally {
+            localStorage.removeItem("auth_token") // always clear the token
             setLoading(false)
         }
     }

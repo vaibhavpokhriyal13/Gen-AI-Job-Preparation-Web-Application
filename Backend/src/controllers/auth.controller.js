@@ -77,6 +77,7 @@ async function registerUserController(req, res) {
 
     res.status(201).json({
         message: "User registered successfully",
+        token, // also return in body for mobile localStorage fallback
         user: {
             id: user._id,
             username: user.username,
@@ -118,11 +119,11 @@ async function loginUserController(req, res) {
     res.cookie("token", token, getCookieOptions(req))
     res.status(200).json({
         message: "User loggedIn successfully",
+        token, // also return in body for mobile localStorage fallback
         user: {
             id: user._id,
             username: user.username,
             email: user.email
-
         }
     })
 

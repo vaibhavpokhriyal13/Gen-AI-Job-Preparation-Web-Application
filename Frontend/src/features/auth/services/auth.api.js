@@ -3,11 +3,19 @@ import axios from "axios";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-const api=axios.create({
-    baseURL:API_URL,
-    withCredentials:true
+const api = axios.create({
+    baseURL: API_URL,
+    withCredentials: true
 })
 
+// Attach JWT from localStorage as Authorization header on every request.
+api.interceptors.request.use((config) => {
+    const token = localStorage.getItem("auth_token")
+    if (token) {
+        config.headers["Authorization"] = `Bearer ${token}`
+    }
+    return config
+})
 
 
 export async function register({ username, email, password }) {
