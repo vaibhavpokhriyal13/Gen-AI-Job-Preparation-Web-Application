@@ -274,7 +274,7 @@ const Home = () => {
 
                 {/* Card Footer */}
                 <div className='interview-card__footer'>
-                    <span className='footer-info'>AI-Powered Strategy Generation &bull; Approx 30s</span>
+                    <span className='footer-info'>AI-Powered Strategy Generation</span>
                     <button
                         onClick={handleGenerateReport}
                         className='generate-btn'
@@ -282,7 +282,7 @@ const Home = () => {
                         style={{ opacity: isGenerating ? 0.7 : 1, cursor: isGenerating ? 'not-allowed' : 'pointer' }}
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z" /></svg>
-                        {isGenerating ? "Generating... (this may take ~30s)" : "Generate My Interview Strategy"}
+                        {isGenerating ? "Generating..." : "Generate My Interview Strategy"}
                     </button>
                 </div>
             </div>
