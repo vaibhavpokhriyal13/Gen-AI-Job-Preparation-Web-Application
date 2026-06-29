@@ -75,12 +75,11 @@ const Interview = () => {
     const [isLongWait, setIsLongWait] = useState(false)
     const [isLoggingOut, setIsLoggingOut] = useState(false)
     const [currentStepIndex, setCurrentStepIndex] = useState(0)
-    const [showNotice, setShowNotice] = useState(() => localStorage.getItem("hideFreeTierNotice") !== "true")
+    const [showNotice, setShowNotice] = useState(true)
     const longWaitTimerRef = useRef(null)
 
     const handleCloseNotice = () => {
         setShowNotice(false)
-        localStorage.setItem("hideFreeTierNotice", "true")
     }
 
     const navigate = useNavigate()

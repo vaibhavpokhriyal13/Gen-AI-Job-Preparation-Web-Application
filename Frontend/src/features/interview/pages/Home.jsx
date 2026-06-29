@@ -25,13 +25,12 @@ const Home = () => {
     const [isLoggingOut, setIsLoggingOut] = useState(false)
     const [selectedFile, setSelectedFile] = useState(null)
     const [currentStepIndex, setCurrentStepIndex] = useState(0)
-    const [showNotice, setShowNotice] = useState(() => localStorage.getItem("hideFreeTierNotice") !== "true")
+    const [showNotice, setShowNotice] = useState(true)
     const resumeInputRef = useRef()
     const longWaitTimerRef = useRef(null)
 
     const handleCloseNotice = () => {
         setShowNotice(false)
-        localStorage.setItem("hideFreeTierNotice", "true")
     }
 
     const navigate = useNavigate()
