@@ -66,6 +66,11 @@ $font-stack: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, s
     &__body {
         display: flex;
         min-height: 520px;
+
+        @media (max-width: 768px) {
+            flex-direction: column;
+            min-height: unset;
+        }
     }
 
     &__footer {
@@ -74,10 +79,22 @@ $font-stack: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, s
         justify-content: space-between;
         padding: 1rem 1.5rem;
         border-top: 1px solid $border-color;
+        flex-wrap: wrap;
+        gap: 0.75rem;
 
         .footer-info {
             font-size: 0.8rem;
             color: $text-muted;
+        }
+
+        @media (max-width: 480px) {
+            flex-direction: column;
+            align-items: stretch;
+
+            .generate-btn {
+                width: 100%;
+                justify-content: center;
+            }
         }
     }
 }
@@ -87,6 +104,11 @@ $font-stack: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, s
     width: 1px;
     background-color: $border-color;
     flex-shrink: 0;
+
+    @media (max-width: 768px) {
+        width: 100%;
+        height: 1px;
+    }
 }
 
 .panel {
@@ -95,6 +117,10 @@ $font-stack: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, s
     flex-direction: column;
     gap: 1rem;
     padding: 1.5rem;
+
+    @media (max-width: 768px) {
+        padding: 1.25rem;
+    }
 
     &__header {
         display: flex;
@@ -130,6 +156,7 @@ $font-stack: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, s
         outline: none;
         transition: border-color 0.2s;
         line-height: 1.5;
+        box-sizing: border-box;
 
         &::placeholder {
             color: $text-muted;
@@ -142,6 +169,11 @@ $font-stack: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, s
         &--short {
             flex: unset;
             height: 96px;
+        }
+
+        @media (max-width: 768px) {
+            // On mobile give the job description textarea a fixed height so it doesn't grow unbounded
+            min-height: 180px;
         }
     }
 
@@ -327,7 +359,6 @@ $font-stack: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, s
     width: 100%;
     max-width: 900px;
 
-
     .reports-list {
         display: flex;
         gap: 0.75rem;
@@ -339,6 +370,7 @@ $font-stack: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, s
             border-radius: 0.5rem;
             padding: 1rem;
             flex: 1;
+            min-width: 240px; // prevents stretching to 1 column on tablet
             display: flex;
             flex-direction: column;
             gap: 0.5rem;
@@ -350,6 +382,10 @@ $font-stack: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, s
                 font-weight: 600;
                 color: $accent;
                 align-items: flex-start;
+            }
+
+            @media (max-width: 480px) {
+                min-width: 100%; // full width cards on small phones
             }
         }
     }

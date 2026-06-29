@@ -18,7 +18,7 @@ $severity-low: #3fb950;
     display: none;
 }
 
-// ── Page Shell ────────────────────────────────────────────────────────────────
+// ── Page Shell ─────────────────────────────────────────────────────────────────────────────
 .interview-page {
     width: 100%;
     min-height: 100vh;
@@ -29,9 +29,14 @@ $severity-low: #3fb950;
     align-items: stretch;
     padding: 1.5rem;
     box-sizing: border-box;
+
+    @media (max-width: 768px) {
+        padding: 0.75rem;
+        align-items: flex-start;
+    }
 }
 
-// ── 3-Column Layout ───────────────────────────────────────────────────────────
+// ── 3-Column Layout ────────────────────────────────────────────────────────────────────────────────────
 .interview-layout {
     display: flex;
     width: 100%;
@@ -41,15 +46,31 @@ $severity-low: #3fb950;
     border: 1px solid $border-color;
     border-radius: 1rem;
     justify-content: space-between;
+
+    @media (max-width: 1024px) {
+        // On tablet: hide the right sidebar, nav stays
+        flex-wrap: wrap;
+    }
+
+    @media (max-width: 768px) {
+        // On mobile: stack everything vertically
+        flex-direction: column;
+        border-radius: 0.75rem;
+    }
 }
 
 .interview-divider {
     width: 1px;
     background-color: $border-color;
     flex-shrink: 0;
+
+    @media (max-width: 768px) {
+        width: 100%;
+        height: 1px;
+    }
 }
 
-// ── Left Nav ─────────────────────────────────────────────────────────────────
+// ── Left Nav ─────────────────────────────────────────────────────────────────────────────────────
 .interview-nav {
     width: 220px;
     flex-shrink: 0;
@@ -59,8 +80,20 @@ $severity-low: #3fb950;
     justify-content: space-between;
     gap: 0.25rem;
 
+    // ── Mobile: horizontal scrollable tab bar ──
+    @media (max-width: 768px) {
+        width: 100%;
+        flex-direction: row;
+        padding: 0.75rem 1rem;
+        overflow-x: auto;
+        gap: 0.25rem;
+        border-bottom: 1px solid $border-color;
 
-
+        // hide the label on mobile to save space
+        .interview-nav__label {
+            display: none;
+        }
+    }
 
     &__label {
         font-size: 0.7rem;
@@ -87,6 +120,7 @@ $severity-low: #3fb950;
         cursor: pointer;
         text-align: left;
         transition: background-color 0.15s, color 0.15s;
+        white-space: nowrap;
 
         &:hover {
             background-color: $bg-panel;
@@ -101,6 +135,13 @@ $severity-low: #3fb950;
                 stroke: $accent;
             }
         }
+
+        @media (max-width: 768px) {
+            width: auto;
+            flex-shrink: 0;
+            font-size: 0.8rem;
+            padding: 0.5rem 0.75rem;
+        }
     }
 
     &__icon {
@@ -110,7 +151,7 @@ $severity-low: #3fb950;
     }
 }
 
-// ── Center Content ────────────────────────────────────────────────────────────
+// ── Center Content ────────────────────────────────────────────────────────────────────────────────────
 .interview-content {
     flex: 1;
     padding: 1.75rem 2rem;
@@ -120,12 +161,11 @@ $severity-low: #3fb950;
     padding-bottom: 5rem;
     align-items: flex-start;
 
-
-
-
-
-
-
+    @media (max-width: 768px) {
+        padding: 1.25rem 1rem;
+        max-height: none; // let it scroll naturally on mobile
+        padding-bottom: 2rem;
+    }
 
     section {
         min-height: 100%;
@@ -353,7 +393,7 @@ $severity-low: #3fb950;
     }
 }
 
-// ── Right Sidebar ─────────────────────────────────────────────────────────────
+// ── Right Sidebar ────────────────────────────────────────────────────────────────────────────────────
 .interview-sidebar {
     width: 240px;
     flex-shrink: 0;
@@ -361,6 +401,33 @@ $severity-low: #3fb950;
     display: flex;
     flex-direction: column;
     gap: 1.25rem;
+
+    @media (max-width: 1024px) {
+        // On tablet, sidebar goes full-width below the content
+        width: 100%;
+        border-top: 1px solid $border-color;
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+        padding: 1.25rem;
+
+        // Give match score and skill gaps equal space side-by-side
+        .match-score,
+        .skill-gaps {
+            flex: 1;
+            min-width: 180px;
+        }
+    }
+
+    @media (max-width: 768px) {
+        flex-direction: column;
+
+        .match-score,
+        .skill-gaps {
+            min-width: unset;
+            width: 100%;
+        }
+    }
 }
 
 .sidebar-divider {
