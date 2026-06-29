@@ -2,7 +2,6 @@ const express = require("express")
 const cookieParser = require("cookie-parser")
 const cors = require("cors")
 const helmet = require("helmet")
-const mongoSanitize = require("express-mongo-sanitize")
 const rateLimit = require("express-rate-limit")
 
 const app = express()
@@ -12,8 +11,26 @@ app.set("trust proxy", 1);
 // Trust proxy header setup and basic secure HTTP headers
 app.use(helmet())
 
-// Prevent NoSQL Injection attacks
-app.use(mongoSanitize())
+// Custom NoSQL query injection prevention (compatible with Express 5 req.query getter)
+const mongoSanitizer = (req, res, next) => {
+    const sanitize = (obj) => {
+        if (obj && typeof obj === 'object') {
+            for (const key in obj) {
+                if (key.startsWith('$')) {
+                    delete obj[key]
+                } else {
+                    sanitize(obj[key])
+                }
+            }
+        }
+    }
+    sanitize(req.body)
+    sanitize(req.query)
+    sanitize(req.params)
+    next()
+}
+app.use(mongoSanitizer)
+
 
 // Limiters to prevent service spam and brute forcing
 const apiLimiter = rateLimit({
