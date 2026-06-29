@@ -165,7 +165,7 @@ const Home = () => {
 
             {/* Top Navigation Bar */}
             <nav className='home-nav-bar'>
-                <div className='home-nav-bar__brand'>
+                <div className='home-nav-bar__brand' onClick={() => navigate("/")} style={{ cursor: "pointer" }}>
                     <span className='home-nav-bar__logo'>
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z" /><path d="M2 17l10 5 10-5" /><path d="M2 12l10 5 10-5" /></svg>
                     </span>
