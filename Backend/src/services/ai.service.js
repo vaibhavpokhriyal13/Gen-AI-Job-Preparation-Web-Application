@@ -239,47 +239,139 @@ async function generatePdfFromHtml(htmlContent) {
 
 
 async function generateResumePDF({ resume, selfDescription, jobDescription }) {
-    const resumePdfSchema = z.object({
-        html: z.string().describe("The HTML content of the resume which can be converted to PDF using a headless browser like puppeteer")
 
+    const prompt = `You are a world-class Executive Resume Writer with 20+ years of experience crafting ATS-optimized resumes for Fortune 500 executives. Your task is to produce a comprehensive, richly detailed, and human-sounding resume that makes the candidate shine by surfacing EVERY valuable piece of information from the provided data.
 
-    })
-
-    const prompt = `You are an elite Executive Resume Writer for Fortune 500 companies. Your task is to generate a highly aggressive, ATS-optimized, and fiercely human-sounding resume by parsing the CANDIDATE RESUME against the JOB DESCRIPTION.
-
-CANDIDATE RESUME:
+CANDIDATE RESUME (extract ALL data — do not discard anything valuable):
 ${resume}
 
-SELF DESCRIPTION:
+SELF DESCRIPTION (extract skills, traits, context, and any additional details):
 ${selfDescription}
 
-JOB DESCRIPTION:
+JOB DESCRIPTION (use to tailor language and ordering, not to exclude content):
 ${jobDescription}
 
-OUTPUT REQUIREMENTS:
-- Return ONLY a JSON object: {"html": "<complete HTML here>"}
-- No markdown, no code fences, no preamble — pure JSON only.
-- Embed all CSS in a <style> tag within the HTML.
+═══════════════════════════════════════════
+OUTPUT FORMAT
+═══════════════════════════════════════════
+- Return ONLY a valid JSON object: {"html": "<complete standalone HTML document>"}
+- No markdown, no code fences, no preamble — raw JSON only.
+- Embed ALL CSS inside a single <style> tag within the <head>. No external stylesheets.
+- The HTML must be a complete, self-contained document (<!DOCTYPE html> ... </html>).
 
-VISUAL & ATS ARCHITECTURE (Based on Reference: Screenshot 2026-06-28 142152.png):
-- Layout: 100% single-column, standard block layout. NO flexbox, NO CSS grid, NO tables.
-- Typography: Arial, Helvetica, or system-sans-serif. Base font 11pt, black (#1a1a1a).
-- Accent Color: Use a striking bright blue (e.g., #007BFF) strictly for the Candidate's Target Job Title, Company/University Names, and Skill Category headings.
-- Section Headers: (SUMMARY, EXPERIENCE, EDUCATION, SKILLS). Must be ALL CAPS, bold, slightly larger, with a thick black bottom border (e.g., border-bottom: 2px solid #000) spanning the page.
-- Alignment: Name (largest, bold) and contact info left-aligned. Dates and Locations must be strictly right-aligned using float or position absolute.
-- Margins: 0.75in padding. Include 'page-break-inside: avoid' on major sections.
+═══════════════════════════════════════════
+VISUAL DESIGN SYSTEM
+═══════════════════════════════════════════
+Layout & Structure:
+- Full single-column layout. NO flexbox columns, NO CSS grid columns, NO table-based layouts.
+- Page width: A4 (210mm). Padding: 18mm top/bottom, 16mm left/right.
+- Include page-break-inside: avoid on every major section and entry block.
 
-CONTENT GENERATION ENGINE (STRICT RULES):
-1. Banned AI Vocabulary: You will be penalized if you use any of the following filler words: "Spearheaded", "Synergy", "Navigated", "Fostered", "Testament", "Dynamic", "Delve", "Leveraged", "Utilized", "Passionate", or "Experienced". Use crisp, executive-level business English.
-2. The "So What?" Summary Hook: Do NOT write a generic objective. Write a 2-sentence Value Proposition. Sentence 1: State the candidate's exact years of experience and core operational strength directly mapping to the JD. Sentence 2: State the business impact they deliver (e.g., "Proven ability to enhance workflow efficiency and data accuracy...").
-3. Bullet Point Algorithm (XYZ Framework): EVERY experience bullet point must be rewritten into this exact structure:
-   - Action Verb (e.g., Engineered, Orchestrated, Reconciled, Authored).
-   - The specific Task/Project directly related to the JD.
-   - The Metric or Result (Extract metrics like '500 records', '40% efficiency', 'zero-miss rate', '100% adherence' from the source data and front-load them where possible).
-   - Example Transformation: Change "Managed weekly administrative scheduling" -> "Governed administrative scheduling and communications, achieving a zero-miss rate for departmental deadlines across critical academic projects."
-4. Contextual Skill Integration: Do not isolate skills in the skills section. If the JD requires "Data Management", ensure a bullet point explicitly states how the candidate used Microsoft Excel to execute data management tasks.
-5. Skill Categorization: Group skills into readable, bright-blue-titled clusters (e.g., Office & Administration, Technical Tools, Languages) separating individual skills with clean inline spacing.
-6. Ruthless Trimming: Omit any data from the CANDIDATE RESUME that does not serve as direct evidence that the candidate can execute the core duties listed in the JOB DESCRIPTION.`
+Typography:
+- Font stack: 'Arial', 'Helvetica Neue', sans-serif.
+- Candidate Name: 22pt, bold, black (#0d0d0d), letter-spacing: 1px.
+- Section Headers: 10.5pt, ALL CAPS, bold, black (#0d0d0d), border-bottom: 2.5px solid #0d0d0d, margin-bottom: 6px, padding-bottom: 3px.
+- Body text: 10pt, color #1a1a1a, line-height: 1.5.
+- Contact line: 9.5pt, color #333.
+
+Accent Color — use #0055CC (professional blue) ONLY for:
+  - The candidate's target job title under the name.
+  - Employer names and university names.
+  - Skill category labels.
+  - Hyperlinks (email, LinkedIn, GitHub).
+
+Bullet points: Use standard HTML <ul> with list-style: disc. Margin-left: 18px. Each <li> has margin-bottom: 3px.
+
+Dates/Locations: Right-aligned on the same line as the job title or institution using float: right; font-style: italic; color: #444; font-size: 9.5pt.
+
+═══════════════════════════════════════════
+MANDATORY RESUME SECTIONS (include ALL that apply based on available data)
+═══════════════════════════════════════════
+
+SECTION 1 — HEADER
+- Full Name (largest element on page)
+- Target Job Title (in accent blue, aligned under name)
+- Contact block: Phone | Email (linked) | LinkedIn URL (linked) | GitHub URL (linked) | Portfolio URL (linked) | City, Country
+- Extract ALL contact info present in the resume or self-description.
+
+SECTION 2 — PROFESSIONAL SUMMARY
+- Write 3–4 rich, impact-focused sentences (NOT a generic objective statement).
+- Sentence 1: Years of experience + core technical strength mapped to the JD.
+- Sentence 2: Key domain expertise and what differentiates the candidate.
+- Sentence 3: Quantifiable business/technical impact delivered.
+- Sentence 4: Cultural fit or soft strength that supports the role.
+- Naturally weave in 4–6 high-value keywords extracted from the JD for ATS optimization.
+
+SECTION 3 — TECHNICAL SKILLS (always include)
+- Group ALL skills from the resume and self-description into clearly labeled categories.
+- Example categories (adapt based on actual data): Programming Languages | Frameworks & Libraries | Databases | Cloud & DevOps | Tools & IDEs | AI/ML | Soft Skills | Languages
+- Use the accent blue color for category labels.
+- List all individual skills inline, separated by " · " (middot). Do NOT truncate the skills list.
+- Include every skill mentioned anywhere in the resume or self-description, even if not directly in the JD.
+
+SECTION 4 — WORK EXPERIENCE (always include if data exists)
+For EACH position, include:
+- Job Title (bold)
+- Company Name (accent blue, bold) | Location (right-aligned float)
+- Employment dates (right-aligned float, italic)
+- 4–6 bullet points per role using the XYZ Achievement Framework:
+  * Start with a strong, varied action verb (Engineered, Architected, Designed, Built, Delivered, Reduced, Increased, Automated, Deployed, Optimized, Developed, Managed, Led, etc.)
+  * Describe the specific task, technology used, and scope.
+  * State the measurable result or impact (%, time saved, users served, cost reduced, etc.).
+  * If no metric is given, infer a plausible, conservative metric or describe the qualitative impact.
+  * Each bullet must be 1–2 full sentences — NOT short fragments.
+  * Example: "Architected and deployed a RESTful API serving 10,000+ daily active users, reducing average response latency by 35% through Redis caching and query optimization."
+
+SECTION 5 — PROJECTS (always include; this is CRITICAL — do NOT omit)
+For EACH project mentioned in the resume or self-description:
+- Project Title (bold) | Tech Stack used (right-aligned, italic, smaller font)
+- 1-line description of what the project does.
+- 3–4 bullet points covering:
+  * Problem solved and why it matters.
+  * Technical architecture, key design decisions, and technologies used.
+  * Key features built (be specific — list actual features like authentication, real-time chat, AI integration, etc.).
+  * Outcome: users, performance metrics, lessons learned, or GitHub stars if mentioned.
+- If a GitHub or live URL is mentioned, render it as a clickable link in accent blue.
+- DO NOT write "Project 1" or generic titles — use the actual project name.
+
+SECTION 6 — EDUCATION (always include)
+For EACH degree/program:
+- Degree Name and Major (bold)
+- Institution Name (accent blue) | Location (right-aligned)
+- Graduation Year or Expected Graduation (right-aligned, italic)
+- CGPA / GPA if mentioned (e.g., "CGPA: 8.5/10")
+- Relevant coursework (list 5–8 courses as comma-separated inline text if available)
+- Academic honors or awards if mentioned
+
+SECTION 7 — CERTIFICATIONS (include if any data exists)
+For EACH certification:
+- Certification Name (bold)
+- Issuing Organization (accent blue) | Year issued
+- Write 1 sentence describing what the certification validates and how it applies to the target role.
+- Do NOT just list the name — add context.
+
+SECTION 8 — ACHIEVEMENTS & AWARDS (include if any data exists)
+- List academic honors, hackathon wins, scholarships, coding competition rankings, publications, or any recognition.
+- For each achievement: bold title, issuing body, year, and a 1-sentence description of its significance.
+
+SECTION 9 — OPEN SOURCE / EXTRACURRICULAR / LEADERSHIP (include if any data exists)
+- Community contributions, open source PRs, club leadership, volunteer work, mentoring.
+- Format same as experience: title, organization, date, 2–3 bullet points with impact.
+
+SECTION 10 — LANGUAGES (include if mentioned)
+- List spoken/written languages and proficiency level (Native, Fluent, Intermediate, Basic).
+
+═══════════════════════════════════════════
+CONTENT GENERATION RULES
+═══════════════════════════════════════════
+1. COMPLETENESS IS MANDATORY: Include ALL data from the resume and self-description. Do NOT omit any project, skill, certification, achievement, or experience — even if it seems tangential. More detail = better resume.
+2. Banned filler words: Never use "Spearheaded", "Synergy", "Navigated", "Fostered", "Testament", "Dynamic", "Delve", "Leveraged", "Utilized", "Passionate", "Experienced", or "Hardworking". Use precise, specific, executive-level language.
+3. ATS Optimization: Naturally integrate exact keywords from the JD throughout the Summary, Experience, and Skills sections. Do NOT keyword-stuff — integrate naturally.
+4. Bullet Length: Every bullet point must be a complete, detailed sentence of at least 15 words. No one-liner fragments.
+5. Infer & Expand: If the resume is sparse on details for a project or role, intelligently infer plausible technical details based on the tech stack mentioned (e.g., if React is listed, mention component architecture, state management, hooks, etc.).
+6. No placeholder text: Never write "[Your Name]", "[Company]", or any bracket placeholders. Use actual data from the input.
+7. Consistent formatting: Every section must follow the exact same visual template defined above.
+8. Page efficiency: Use compact but readable spacing so the resume is dense with value. Avoid large empty white spaces.`
 
     const responseSchema = {
         type: "object",
