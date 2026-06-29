@@ -1,4 +1,4 @@
-import { generateInterviewReport, getAllInterviewReports, generateInterviewReportById, generateResumePdf } from "../services/interview.api"
+import { generateInterviewReport, getAllInterviewReports, generateInterviewReportById, generateResumePdf, deleteInterviewReportById } from "../services/interview.api"
 import { useContext } from "react"
 import { InterviewContext } from "../interview.context"
 
@@ -69,6 +69,19 @@ export const useInterview = () => {
         }
     }
 
-    return { loading, generateReport, getReportById, getAllReports, report, reports, getResumePdf }
+    const deleteReport = async (interviewId) => {
+        setLoading(true)
+        try {
+            await deleteInterviewReportById(interviewId)
+            setReports((prev) => prev.filter(r => (r._id !== interviewId && r.id !== interviewId)))
+        } catch (error) {
+            console.error("Error deleting report:", error)
+            alert("Failed to delete the report. Please try again.")
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    return { loading, generateReport, getReportById, getAllReports, report, reports, getResumePdf, deleteReport }
 }
 

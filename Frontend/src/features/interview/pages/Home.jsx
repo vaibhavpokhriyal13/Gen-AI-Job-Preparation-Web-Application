@@ -16,7 +16,7 @@ const GENERATION_STEPS = [
 ];
 
 const Home = () => {
-    const { generateReport, getAllReports, reports } = useInterview()
+    const { generateReport, getAllReports, reports, deleteReport } = useInterview()
     const { handleLogout } = useAuth()
     const [jobDescription, setJobDescription] = useState("")
     const [selfDescription, setSelfDescription] = useState("")
@@ -57,6 +57,13 @@ const Home = () => {
             }
         }
     }
+
+    const handleDeleteReport = async (reportId) => {
+        if (window.confirm("Are you sure you want to delete this interview plan? This action cannot be undone.")) {
+            await deleteReport(reportId)
+        }
+    }
+
 
 
 
@@ -277,10 +284,25 @@ const Home = () => {
                     <h2>My Recent Interview Plans</h2>
                     <ul className='reports-list flex flex-column gap-0.75rem'>
                         {reports.map(report => (
-                            <li key={report._id} className='report-item ' onClick={() => navigate(`/interview/${report._id}`)}>
-                                <h3>{report.title || "Untitled Position"}</h3>
-                                <p className='report-meta'>{new Date(report.createdAt).toLocaleDateString()}</p>
-                                <p className='match-score'>Match Score: {report.matchScore}%</p>
+                            <li key={report._id} className='report-item' onClick={() => navigate(`/interview/${report._id}`)}>
+                                <div className='report-item__details'>
+                                    <h3>{report.title || "Untitled Position"}</h3>
+                                    <div className='report-item__meta-row'>
+                                        <span className='report-meta'>{new Date(report.createdAt).toLocaleDateString()}</span>
+                                        <span className='report-match-score'>Match: {report.matchScore}%</span>
+                                    </div>
+                                </div>
+                                <button
+                                    className='delete-report-btn'
+                                    onClick={(e) => {
+                                        e.stopPropagation()
+                                        handleDeleteReport(report._id)
+                                    }}
+                                    title='Delete Plan'
+                                    type='button'
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                                </button>
                             </li>
                         ))}
                     </ul>

@@ -474,24 +474,86 @@ $font-stack: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, s
             background-color: #1a202e;
             border: 1px solid $border-color;
             border-radius: 0.5rem;
-            padding: 1rem;
+            padding: 1rem 3rem 1rem 1.25rem;
             flex: 1;
-            min-width: 240px; // prevents stretching to 1 column on tablet
+            min-width: 240px;
             display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
             cursor: pointer;
             flex-shrink: 0;
+            transition: border-color 0.20s, background-color 0.20s;
 
-            .match-score {
-                font-size: 0.8rem;
-                font-weight: 600;
-                color: $accent;
-                align-items: flex-start;
+            &:hover {
+                border-color: $accent;
+                background-color: lighten(#1a202e, 2%);
+                
+                .delete-report-btn {
+                    opacity: 0.8;
+                }
             }
 
-            @media (max-width: 480px) {
-                min-width: 100%; // full width cards on small phones
+            &__details {
+                display: flex;
+                flex-direction: column;
+                gap: 0.35rem;
+                flex: 1;
+                min-width: 0;
+
+                h3 {
+                    margin: 0;
+                    font-size: 0.95rem;
+                    font-weight: 600;
+                    color: $text-primary;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                }
+            }
+
+            &__meta-row {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                font-size: 0.78rem;
+            }
+
+            .report-meta {
+                color: $text-muted;
+            }
+
+            .report-match-score {
+                font-weight: 600;
+                color: $accent;
+            }
+        }
+
+        .delete-report-btn {
+            position: absolute;
+            right: 0.85rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: $text-muted;
+            cursor: pointer;
+            padding: 0.35rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.35rem;
+            transition: color 0.15s, background-color 0.15s, opacity 0.15s;
+            opacity: 0;
+
+            &:hover {
+                color: #ff4d4d;
+                background-color: rgba(#ff4d4d, 0.15);
+                opacity: 1 !important;
+            }
+
+            @media (max-width: 768px) {
+                opacity: 0.7; // always visible on mobile
             }
         }
     }
