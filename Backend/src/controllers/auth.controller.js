@@ -4,19 +4,28 @@ const jwt = require("jsonwebtoken")
 const tokenBlacklistModel = require("../models/blacklist.model")
 
 const getCookieOptions = (req) => {
+    // Primary: trust NODE_ENV. Secondary: detect if request comes from a known prod origin.
     const isProduction = process.env.NODE_ENV === "production" ||
-        (req.get("host") && req.get("host").includes("onrender.com"));
+        (req.get("origin") && (
+            req.get("origin").includes("vercel.app") ||
+            req.get("origin").includes("onrender.com") ||
+            req.get("origin").includes("netlify.app")
+        ));
     return {
         httpOnly: true,
-        secure: isProduction,
-        sameSite: isProduction ? "none" : "lax",
-        maxAge: 24 * 60 * 60 * 1000 // 1 day
+        secure: isProduction,           // must be true for SameSite=None
+        sameSite: isProduction ? "none" : "lax",  // none = allow cross-origin cookies
+        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days (increased from 1 day)
     };
 };
 
 const getClearCookieOptions = (req) => {
     const isProduction = process.env.NODE_ENV === "production" ||
-        (req.get("host") && req.get("host").includes("onrender.com"));
+        (req.get("origin") && (
+            req.get("origin").includes("vercel.app") ||
+            req.get("origin").includes("onrender.com") ||
+            req.get("origin").includes("netlify.app")
+        ));
     return {
         httpOnly: true,
         secure: isProduction,

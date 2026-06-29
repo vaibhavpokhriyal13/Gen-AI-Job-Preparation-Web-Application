@@ -43,17 +43,15 @@ export const useAuth = () => {
         }
     }
 
-    const handleLogut = async ({ }) => {
+    const handleLogout = async () => {
         setLoading(true)
         try {
-
-            const data = await logout({})
-            setUser(null)
+            await logout()
+            setUser(null) // this triggers the useEffect in AuthContext to clear localStorage
         } catch (err) {
-
-        }
-        finally {
-
+            // Even if logout API fails, clear local session
+            setUser(null)
+        } finally {
             setLoading(false)
         }
     }
@@ -64,8 +62,8 @@ export const useAuth = () => {
             try {
                 const data = await getMe()
                 setUser(data.user)
-            } catch (err){} 
-            finally{
+            } catch (err) { }
+            finally {
                 setLoading(false)
             }
         }
@@ -73,6 +71,6 @@ export const useAuth = () => {
     }, [])
 
 
-    return { user, loading, handleRegister, handleLogin, handleLogut }
+    return { user, loading, handleRegister, handleLogin, handleLogout }
 
 }

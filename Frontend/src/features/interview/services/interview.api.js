@@ -13,7 +13,9 @@ const api = axios.create({
 
 export const generateInterviewReport = async ({ jobDescription, selfDescription, resumeFile }) => {
     const formData = new FormData();
-    formData.append("resume", resumeFile);
+    if (resumeFile) {
+        formData.append("resume", resumeFile); // only attach if a file was actually selected
+    }
     formData.append("jobDescription", jobDescription);
     formData.append("selfDescription", selfDescription);
 

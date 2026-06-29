@@ -5,9 +5,10 @@ import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router'
 
 const Home = () => {
-    const { loading, generateReport, getAllReports, reports } = useInterview()
+    const { generateReport, getAllReports, reports } = useInterview()
     const [jobDescription, setJobDescription] = useState("")
     const [selfDescription, setSelfDescription] = useState("")
+    const [isGenerating, setIsGenerating] = useState(false)
     const resumeInputRef = useRef()
 
 
@@ -16,27 +17,29 @@ const Home = () => {
         getAllReports()
     }, [])
 
-    if (loading) {
-        return (
-            <main>Loading your interview</main>
-        )
-    }
-
     const handleGenerateReport = async () => {
+        const resumeFile = resumeInputRef.current?.files?.[0]
+        if (!resumeFile && !selfDescription.trim()) {
+            alert("Please provide either a resume or a self-description to continue.");
+            return;
+        }
+        if (!jobDescription.trim()) {
+            alert("Please paste the job description to continue.");
+            return;
+        }
+        setIsGenerating(true)
         try {
-            const resumeFile = resumeInputRef.current.files?.[0]
-            if (!resumeFile && !selfDescription.trim()) {
-                alert("Please provide either a resume or a self-description to continue.");
-                return;
-            }
             const data = await generateReport({ jobDescription, selfDescription, resumeFile })
             if (data && (data._id || data.id)) {
                 navigate(`/interview/${data._id || data.id}`);
+            } else {
+                alert("Something went wrong generating your report. Please try again.");
             }
         } catch (error) {
-            // If the backend fails (400 or 500 error), it jumps here instead of crashing
             console.error("Failed to generate report:", error);
             alert("Something went wrong generating your report. Please try again.");
+        } finally {
+            setIsGenerating(false)
         }
     }
 
@@ -126,9 +129,14 @@ const Home = () => {
                 {/* Card Footer */}
                 <div className='interview-card__footer'>
                     <span className='footer-info'>AI-Powered Strategy Generation &bull; Approx 30s</span>
-                    <button onClick={handleGenerateReport} className='generate-btn'>
+                    <button
+                        onClick={handleGenerateReport}
+                        className='generate-btn'
+                        disabled={isGenerating}
+                        style={{ opacity: isGenerating ? 0.7 : 1, cursor: isGenerating ? 'not-allowed' : 'pointer' }}
+                    >
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z" /></svg>
-                        {loading ? "Generating..." : "Generate My Interview Strategy"}
+                        {isGenerating ? "Generating... (this may take ~30s)" : "Generate My Interview Strategy"}
                     </button>
                 </div>
             </div>
