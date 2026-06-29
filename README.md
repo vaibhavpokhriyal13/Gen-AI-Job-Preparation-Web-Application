@@ -4,7 +4,6 @@
 
 🔗 **Live Frontend URL**: [gen-ai-job-preparation-web-applic-eta.vercel.app](https://gen-ai-job-preparation-web-applicat-eta.vercel.app)
 
-
 🔗 **Backend Service URL**: [gen-ai-job-preparation-web-application-5rhs.onrender.com](https://gen-ai-job-preparation-web-application-5rhs.onrender.com)
 
 
