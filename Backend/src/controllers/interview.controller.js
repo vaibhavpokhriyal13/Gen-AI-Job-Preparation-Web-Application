@@ -67,8 +67,17 @@ async function generateInterviewReportController(req, res) {
     } catch (error) {
         // Log the exact error to console for debugging
         console.error("Error generating interview report:", error);
+
+        let clientMessage = "Error generating interview report. Please try again.";
+        const errMsg = error?.message || "";
+        if (errMsg.includes("503") || errMsg.includes("high demand") || errMsg.includes("UNAVAILABLE")) {
+            clientMessage = "The AI model is experiencing temporary high traffic. Please wait a moment and try again.";
+        } else if (errMsg.includes("429") || errMsg.includes("RESOURCE_EXHAUSTED")) {
+            clientMessage = "Gemini rate limit reached. Please wait a moment before trying again.";
+        }
+
         res.status(500).json({
-            message: "Error generating interview report",
+            message: clientMessage,
             error: error.message
         });
     }
@@ -149,8 +158,17 @@ async function generateResumePdfController(req, res) {
         res.send(pdfBuffer);
     } catch (error) {
         console.error("Error generating resume pdf:", error);
+
+        let clientMessage = "Error generating resume pdf. Please try again.";
+        const errMsg = error?.message || "";
+        if (errMsg.includes("503") || errMsg.includes("high demand") || errMsg.includes("UNAVAILABLE")) {
+            clientMessage = "The AI model is experiencing temporary high traffic. Please wait a moment and try again.";
+        } else if (errMsg.includes("429") || errMsg.includes("RESOURCE_EXHAUSTED")) {
+            clientMessage = "Gemini rate limit reached. Please wait a moment before trying again.";
+        }
+
         res.status(500).json({
-            message: "Error generating resume pdf",
+            message: clientMessage,
             error: error.message
         });
     }

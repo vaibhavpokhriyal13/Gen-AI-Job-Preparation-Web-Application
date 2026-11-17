@@ -8,6 +8,25 @@ const ai = new GoogleGenAI({
     apiKey: process.env.GOOGLE_GENAI_API_KEY
 });
 
+async function callAiWithFallback({ contents, config, modelsToTry = ["gemini-2.5-flash", "gemini-2.5-flash-lite"] }) {
+    let lastError = null;
+    for (const model of modelsToTry) {
+        try {
+            console.log(`[AI Service] Attempting inference with model: ${model}`);
+            const response = await ai.models.generateContent({
+                model,
+                contents,
+                config
+            });
+            return response;
+        } catch (err) {
+            console.warn(`[AI Service] Model ${model} failed (${err.message || err}). Trying fallback...`);
+            lastError = err;
+        }
+    }
+    throw lastError;
+}
+
 // 1. Zod Schema Definition
 const interviewReportSchema = z.object({
     isValid: z.boolean().describe("True if the jobDescription and candidate profile/resume are valid, readable, and meaningful text in any language. False if either is gibberish, spam, keyboard-mashing, or completely irrelevant."),
@@ -143,13 +162,13 @@ Job Description: ${jobDescription}
         required: ["isValid", "errorMessage", "matchScore", "title", "technicalQuestion", "behavioralQuestion", "skillGaps", "preparationPlan"]
     };
 
-    const response = await ai.models.generateContent({
-        model: "gemini-3.5-flash",
+    const response = await callAiWithFallback({
         contents: prompt,
         config: {
             responseMimeType: "application/json",
             responseSchema: responseSchema
-        }
+        },
+        modelsToTry: ["gemini-2.5-flash", "gemini-2.5-flash-lite"]
     });
     console.log(response.text);
 
@@ -472,13 +491,13 @@ Including every project and every skill is mandatory. Missing even one project f
         required: ["html"]
     };
 
-    const response = await ai.models.generateContent({
-        model: "gemini-3.1-flash-lite",
+    const response = await callAiWithFallback({
         contents: prompt,
         config: {
             responseMimeType: "application/json",
             responseSchema: responseSchema
-        }
+        },
+        modelsToTry: ["gemini-2.5-flash", "gemini-3.1-flash-lite", "gemini-2.5-flash-lite"]
     });
     const jsonContent = JSON.parse(response.text);
 
