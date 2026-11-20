@@ -16,22 +16,41 @@ async function generateInterviewReportController(req, res) {
         // 1. Check if file is uploaded before trying to parse
         if (req.file) {
             try {
-                const pdfData = await pdfParse(req.file.buffer);
-                resumeContent = pdfData.text;
+                if (typeof pdfParse === 'function') {
+                    const pdfData = await pdfParse(req.file.buffer);
+                    resumeContent = pdfData?.text || "";
+                } else {
+                    const PdfClass = pdfParse.PDFParse || pdfParse.default || pdfParse;
+                    const parser = new PdfClass({ data: req.file.buffer });
+                    const result = await parser.getText();
+                    resumeContent = typeof result === 'string' ? result : (result?.text || "");
+                    if (typeof parser.destroy === 'function') {
+                        await parser.destroy();
+                    }
+                }
             } catch (parseErr) {
+                console.warn("Primary PDF parse attempt failed, trying fallback:", parseErr.message);
                 try {
                     const PdfClass = pdfParse.PDFParse || pdfParse.default || pdfParse;
-                    const pdfInstance = new PdfClass(Uint8Array.from(req.file.buffer));
-                    resumeContent = typeof pdfInstance.getText === 'function'
-                        ? await pdfInstance.getText()
-                        : pdfInstance.text;
+                    const parser = new PdfClass(Uint8Array.from(req.file.buffer));
+                    const result = await parser.getText();
+                    resumeContent = typeof result === 'string' ? result : (result?.text || "");
+                    if (typeof parser.destroy === 'function') {
+                        await parser.destroy();
+                    }
                 } catch (fallbackErr) {
-                    console.error("Failed to parse PDF:", fallbackErr);
+                    console.error("All PDF parse attempts failed:", fallbackErr);
                 }
             }
         }
 
-        const { selfDescription, jobDescription } = req.body;
+        // Guarantee resumeContent is a pure string (never an object or [object Object])
+        if (typeof resumeContent === 'object' && resumeContent !== null) {
+            resumeContent = resumeContent.text || "";
+        }
+        resumeContent = String(resumeContent || "").trim();
+
+        const { selfDescription = "", jobDescription = "" } = req.body;
 
         // 2. Call the AI service
         const interviewReportByAi = await generateInterviewReport({

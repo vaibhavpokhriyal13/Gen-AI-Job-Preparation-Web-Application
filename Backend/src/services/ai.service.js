@@ -56,14 +56,21 @@ const interviewReportSchema = z.object({
 
 async function generateInterviewReport({ resume, selfDescription, jobDescription }) {
 
+    const cleanResume = typeof resume === 'object' && resume !== null
+        ? (resume.text || JSON.stringify(resume))
+        : String(resume || "").trim();
+    const cleanSelfDesc = typeof selfDescription === 'string' ? selfDescription.trim() : (selfDescription ? String(selfDescription).trim() : "");
+    const cleanJobDesc = typeof jobDescription === 'string' ? jobDescription.trim() : (jobDescription ? String(jobDescription).trim() : "");
+
     const prompt = `You are an expert technical recruiter and engineering manager. 
 Analyze the candidate's Resume and Self Description against the provided Job Description.
 Generate a highly detailed interview preparation report in strict JSON format.
 
 CRITICAL QUALITY CHECK:
-1. Evaluate if the provided "Job Description" and "Resume/Self Description" are valid, meaningful text in English or any other language.
-2. If either input is gibberish, spam, keyboard mashing (e.g. "asdfasdf", "qwerty", "xyzxyz", "asdasd"), completely blank, or irrelevant random letters, you MUST set "isValid" to false and set a clear, polite explanation in "errorMessage" (e.g. "The job description you pasted contains invalid random letters. Please provide a valid job listing."). In this case, set "matchScore" to 0, "title" to "Invalid Input", and return empty arrays for "technicalQuestion", "behavioralQuestion", "skillGaps", and "preparationPlan".
-3. If they are valid, set "isValid" to true, "errorMessage" to "", and proceed to generate the preparation report.
+1. Evaluate if the provided "Job Description" and candidate profile (provided via "Resume" and/or "Self Description") are valid, meaningful text in English or any other language.
+2. Note: A candidate may provide their background through a Resume OR a Self Description OR both. Having one of them empty while the other contains valid candidate details is completely expected and valid.
+3. If the Job Description is completely blank, gibberish, spam, or keyboard mashing, OR if BOTH the Resume and Self Description are completely blank, gibberish, or spam, you MUST set "isValid" to false and set a clear, polite explanation in "errorMessage" (e.g. "Please provide a valid job description and candidate background."). In this case, set "matchScore" to 0, "title" to "Invalid Input", and return empty arrays for "technicalQuestion", "behavioralQuestion", "skillGaps", and "preparationPlan".
+4. If they contain valid text, set "isValid" to true, "errorMessage" to "", and proceed to generate the preparation report.
 
 CRITICAL INSTRUCTION:
 1. Provide a comprehensive 7-day daily preparation plan (days 1 through 7) under "preparationPlan".
@@ -93,11 +100,11 @@ RULES:
 4. "preparationPlan" must contain exactly 7 objects (one for each day from 1 to 7).
 Candidate Details:
 ---
-Resume: ${resume}
+Resume: ${cleanResume}
 ---
-Self Description: ${selfDescription}
+Self Description: ${cleanSelfDesc}
 ---
-Job Description: ${jobDescription}
+Job Description: ${cleanJobDesc}
 `;
 
     // 3. Direct OpenAPI Schema Definition (Bypasses $ref mapping which Gemini doesn't support)
@@ -259,6 +266,12 @@ async function generatePdfFromHtml(htmlContent) {
 
 async function generateResumePDF({ resume, selfDescription, jobDescription }) {
 
+    const cleanResume = typeof resume === 'object' && resume !== null
+        ? (resume.text || JSON.stringify(resume))
+        : String(resume || "").trim();
+    const cleanSelfDesc = typeof selfDescription === 'string' ? selfDescription.trim() : (selfDescription ? String(selfDescription).trim() : "");
+    const cleanJobDesc = typeof jobDescription === 'string' ? jobDescription.trim() : (jobDescription ? String(jobDescription).trim() : "");
+
     const prompt = `You are a Senior Technical Resume Writer who has helped thousands of engineers land roles at top-tier tech companies. You write resumes that score 85-95+ on ATS analyzers while reading like they were crafted by a real human who deeply understands the candidate's background.
 
 Your task: Transform the candidate data below into a PREMIUM, PERSONALIZED, QUANTIFIED, ATS-optimized resume in self-contained HTML format.
@@ -267,13 +280,13 @@ Your task: Transform the candidate data below into a PREMIUM, PERSONALIZED, QUAN
 CANDIDATE INPUT DATA
 ==================================================
 CANDIDATE RESUME (parse every single detail - name, contact info, skills, projects, experience, education, certifications, achievements - extract everything):
-${resume}
+${cleanResume}
 
 CANDIDATE SELF DESCRIPTION (extract additional skills, goals, personality traits, extra projects, and any context not captured in the resume):
-${selfDescription}
+${cleanSelfDesc}
 
 TARGET JOB DESCRIPTION (extract: role title, required tech stack, key responsibilities, preferred qualifications, and domain-specific keywords):
-${jobDescription}
+${cleanJobDesc}
 
 ==================================================
 OUTPUT FORMAT
