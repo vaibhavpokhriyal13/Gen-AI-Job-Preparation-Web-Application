@@ -48,6 +48,18 @@ interviewRouter.get("/resume/pdf/:interviewReportId", authMiddleware.authUser, i
  */
 interviewRouter.delete("/report/:interviewId", authMiddleware.authUser, interviewController.deleteInterviewReportController);
 
+/**
+ * @route POST /api/interview/evaluate-answer
+ * @description evaluate a candidate's practice answer with AI
+ * @access private
+ */
+interviewRouter.post("/evaluate-answer", authMiddleware.authUser, interviewController.evaluateAnswerController);
 
+/**
+ * @route GET /api/interview/elevator-pitch/:interviewId
+ * @description generate a 60-second elevator pitch for the interview
+ * @access private
+ */
+interviewRouter.get("/elevator-pitch/:interviewId", authMiddleware.authUser, interviewController.getElevatorPitchController);
 
 module.exports = interviewRouter

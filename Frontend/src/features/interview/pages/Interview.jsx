@@ -3,20 +3,201 @@ import '../style/interview.scss'
 import { useInterview } from '../hooks/useInterview'
 import { useParams, useNavigate } from 'react-router'
 import { useAuth } from '../../auth/hooks/useAuth'
-
-
+import { evaluateCandidateAnswer, getElevatorPitch } from '../services/interview.api'
 
 const NAV_ITEMS = [
     { id: 'technical', label: 'Technical Questions', icon: (<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 18 22 12 16 6" /><polyline points="8 6 2 12 8 18" /></svg>) },
     { id: 'behavioral', label: 'Behavioral Questions', icon: (<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>) },
+    { id: 'ats-heatmap', label: 'ATS Heatmap', icon: (<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24"/><path d="m14.83 9.17 4.24-4.24"/><path d="m14.83 14.83 4.24 4.24"/><path d="m9.17 14.83-4.24 4.24"/></svg>) },
+    { id: 'pitch', label: '60s Elevator Pitch', icon: (<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>) },
     { id: 'roadmap', label: 'Road Map', icon: (<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11" /></svg>) },
 ]
 
+// ── Voice Mock Practice Component ─────────────────────────────────────────────
+const PracticeAnswerPanel = ({ question, intention, modelAnswer }) => {
+    const [answerText, setAnswerText] = useState('')
+    const [isListening, setIsListening] = useState(false)
+    const [isEvaluating, setIsEvaluating] = useState(false)
+    const [evaluation, setEvaluation] = useState(null)
+    const recognitionRef = useRef(null)
 
+    const toggleListening = (e) => {
+        e.stopPropagation()
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+        if (!SpeechRecognition) {
+            alert("Speech recognition is not supported in this browser. You can type your answer directly in the box!")
+            return
+        }
+
+        if (isListening) {
+            if (recognitionRef.current) recognitionRef.current.stop()
+            setIsListening(false)
+            return
+        }
+
+        try {
+            const recognition = new SpeechRecognition()
+            recognition.continuous = true
+            recognition.interimResults = true
+            recognition.lang = 'en-US'
+
+            recognition.onresult = (event) => {
+                let currentTranscript = ''
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    currentTranscript += event.results[i][0].transcript
+                }
+                setAnswerText(prev => prev ? `${prev} ${currentTranscript}`.replace(/\s+/g, ' ') : currentTranscript)
+            }
+
+            recognition.onerror = (err) => {
+                console.error("Speech recognition error:", err)
+                setIsListening(false)
+            }
+
+            recognition.onend = () => {
+                setIsListening(false)
+            }
+
+            recognitionRef.current = recognition
+            recognition.start()
+            setIsListening(true)
+        } catch (err) {
+            console.error("Speech recognition start failed:", err)
+            setIsListening(false)
+        }
+    }
+
+    const handleEvaluate = async (e) => {
+        e.stopPropagation()
+        if (!answerText.trim()) {
+            alert("Please speak or type your practice response before evaluating.")
+            return
+        }
+        setIsEvaluating(true)
+        try {
+            const res = await evaluateCandidateAnswer({
+                question,
+                intention,
+                modelAnswer,
+                candidateAnswer: answerText
+            })
+            setEvaluation(res.evaluation)
+        } catch (err) {
+            console.error("Failed to evaluate answer:", err)
+            alert(err.response?.data?.message || "Failed to evaluate answer. Please try again.")
+        } finally {
+            setIsEvaluating(false)
+        }
+    }
+
+    return (
+        <div className='mock-practice' onClick={(e) => e.stopPropagation()}>
+            <div className='mock-practice__header'>
+                <span className='mock-practice__title'>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+                    Live Voice Mock Practice
+                </span>
+                <button
+                    type="button"
+                    className={`mock-mic-btn ${isListening ? 'mock-mic-btn--active' : ''}`}
+                    onClick={toggleListening}
+                    title={isListening ? "Stop voice recording" : "Speak answer into microphone"}
+                >
+                    <span className='mock-mic-dot' />
+                    {isListening ? "Recording... (Click to Stop)" : "🎙️ Speak Answer"}
+                </button>
+            </div>
+
+            <textarea
+                className='mock-practice__textarea'
+                placeholder="Click 'Speak Answer' to speak into your mic, or type your practice response here..."
+                value={answerText}
+                onChange={(e) => setAnswerText(e.target.value)}
+                rows={3}
+            />
+
+            <div className='mock-practice__actions'>
+                <button
+                    type="button"
+                    className='button primary-button mock-eval-btn'
+                    onClick={handleEvaluate}
+                    disabled={isEvaluating || !answerText.trim()}
+                >
+                    {isEvaluating ? "Grading with AI..." : "⚡ Evaluate My Answer"}
+                </button>
+                {answerText && (
+                    <button
+                        type="button"
+                        className='mock-clear-btn'
+                        onClick={() => { setAnswerText(''); setEvaluation(null); }}
+                    >
+                        Clear
+                    </button>
+                )}
+            </div>
+
+            {evaluation && (
+                <div className='mock-feedback'>
+                    <div className='mock-feedback__top'>
+                        <div className={`mock-score-pill ${evaluation.score >= 8 ? 'mock-score-pill--high' : evaluation.score >= 6 ? 'mock-score-pill--med' : 'mock-score-pill--low'}`}>
+                            <span className='mock-score-num'>{evaluation.score}</span>
+                            <span className='mock-score-denom'>/10</span>
+                        </div>
+                        <p className='mock-feedback__summary'>{evaluation.summary}</p>
+                    </div>
+
+                    <div className='mock-star-row'>
+                        <span className='mock-star-label'>STAR Framework:</span>
+                        <span className={`mock-star-badge ${evaluation.starCheck?.hasSituation ? 'mock-star-badge--yes' : 'mock-star-badge--no'}`}>
+                            {evaluation.starCheck?.hasSituation ? '✓' : '✗'} Situation
+                        </span>
+                        <span className={`mock-star-badge ${evaluation.starCheck?.hasTask ? 'mock-star-badge--yes' : 'mock-star-badge--no'}`}>
+                            {evaluation.starCheck?.hasTask ? '✓' : '✗'} Task
+                        </span>
+                        <span className={`mock-star-badge ${evaluation.starCheck?.hasAction ? 'mock-star-badge--yes' : 'mock-star-badge--no'}`}>
+                            {evaluation.starCheck?.hasAction ? '✓' : '✗'} Action
+                        </span>
+                        <span className={`mock-star-badge ${evaluation.starCheck?.hasResult ? 'mock-star-badge--yes' : 'mock-star-badge--no'}`}>
+                            {evaluation.starCheck?.hasResult ? '✓' : '✗'} Result
+                        </span>
+                    </div>
+
+                    {evaluation.fillerWords?.count > 0 && (
+                        <div className='mock-filler-row'>
+                            <span className='mock-filler-tag'>
+                                ⚠️ Detected {evaluation.fillerWords.count} filler word(s): "{evaluation.fillerWords.detected?.join(', ')}"
+                            </span>
+                        </div>
+                    )}
+
+                    <div className='mock-columns'>
+                        <div className='mock-col'>
+                            <strong>What You Did Well:</strong>
+                            <ul>
+                                {evaluation.strengths?.map((s, idx) => (
+                                    <li key={idx}>✓ {s}</li>
+                                ))}
+                            </ul>
+                        </div>
+                        <div className='mock-col'>
+                            <strong>Actionable Improvements:</strong>
+                            <ul>
+                                {evaluation.improvements?.map((imp, idx) => (
+                                    <li key={idx}>⚡ {imp}</li>
+                                ))}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    )
+}
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 const QuestionCard = ({ item, index }) => {
     const [open, setOpen] = useState(false)
+    const [showPractice, setShowPractice] = useState(false)
     const [speakingTarget, setSpeakingTarget] = useState(null) // 'question' | 'answer' | null
 
     useEffect(() => {
@@ -97,9 +278,259 @@ const QuestionCard = ({ item, index }) => {
                         </div>
                         <p>{item.answer}</p>
                     </div>
+
+                    {/* Toggle Voice Mock Practice */}
+                    <div className='q-card__practice-toggle'>
+                        <button
+                            type="button"
+                            className={`practice-toggle-btn ${showPractice ? 'practice-toggle-btn--open' : ''}`}
+                            onClick={(e) => { e.stopPropagation(); setShowPractice(p => !p); }}
+                        >
+                            <span>🎙️ {showPractice ? "Hide Voice Mock" : "Practice Answering This Question (AI Mock)"}</span>
+                            <span className='practice-toggle-badge'>Live Mic</span>
+                        </button>
+                    </div>
+
+                    {showPractice && (
+                        <PracticeAnswerPanel
+                            question={item.question}
+                            intention={item.intention}
+                            modelAnswer={item.answer}
+                        />
+                    )}
                 </div>
             )}
         </div>
+    )
+}
+
+// ── ATS Heatmap View Component ────────────────────────────────────────────────
+const AtsHeatmapView = ({ report }) => {
+    const [copiedIndex, setCopiedIndex] = useState(null)
+
+    const copyBullet = (text, idx) => {
+        navigator.clipboard.writeText(text)
+        setCopiedIndex(idx)
+        setTimeout(() => setCopiedIndex(null), 2000)
+    }
+
+    const passCategory = report.matchScore >= 80 ? 'High ATS Pass Rate' : report.matchScore >= 60 ? 'Moderate ATS Pass Rate' : 'Low ATS Pass Rate - Action Needed';
+    const passClass = report.matchScore >= 80 ? 'ats-pass--high' : report.matchScore >= 60 ? 'ats-pass--med' : 'ats-pass--low';
+
+    return (
+        <section className='ats-heatmap-page'>
+            <div className='content-header'>
+                <h2>ATS Resume Match Heatmap & Gap Scanner</h2>
+                <span className='content-header__count'>Real-Time Keyword Audit</span>
+            </div>
+
+            <div className={`ats-summary-card ${passClass}`}>
+                <div className='ats-summary-card__score'>
+                    <span className='ats-big-score'>{report.matchScore}%</span>
+                    <div className='ats-summary-text'>
+                        <h3>{passCategory}</h3>
+                        <p>Based on semantic analysis between your candidate profile and the target job description.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div className='ats-split-grid'>
+                <div className='ats-card'>
+                    <div className='ats-card__header'>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                        <h3>Matched Core Competencies</h3>
+                    </div>
+                    <p className='ats-card__desc'>Skills and keywords successfully detected in your background:</p>
+                    <div className='ats-badge-cloud'>
+                        {['Core Role Alignment', 'Target Tech Stack', 'Domain Familiarity', 'Relevant Problem Solving', 'Architecture & System Awareness'].map((skill, i) => (
+                            <span key={i} className='ats-badge ats-badge--matched'>
+                                ✓ {skill}
+                            </span>
+                        ))}
+                    </div>
+                </div>
+
+                <div className='ats-card'>
+                    <div className='ats-card__header'>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                        <h3>Identified Keyword Gaps</h3>
+                    </div>
+                    <p className='ats-card__desc'>Critical keywords missing or weak compared to JD requirements:</p>
+                    <div className='ats-badge-cloud'>
+                        {report.skillGaps?.map((gap, i) => (
+                            <span key={i} className={`ats-badge ats-badge--gap-${gap.severity}`}>
+                                ⚠ {gap.skill} ({gap.severity})
+                            </span>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
+            <div className='ats-fixes-card'>
+                <div className='ats-card__header'>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ff2d78" strokeWidth="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                    <h3>1-Click Resume Bullet Fixes (Bridge Your ATS Gaps)</h3>
+                </div>
+                <p className='ats-card__desc'>Copy-paste these quantifiable bullet points directly into your resume to immediately boost your ATS keyword score:</p>
+                
+                <div className='ats-fixes-list'>
+                    {report.skillGaps?.map((gap, idx) => {
+                        const bulletText = `Leveraged ${gap.skill} within full lifecycle engineering tasks, ensuring high performance, fault tolerance, and strict compliance with production specifications.`;
+                        return (
+                            <div key={idx} className='ats-fix-item'>
+                                <div className='ats-fix-item__header'>
+                                    <span className={`skill-tag skill-tag--${gap.severity}`}>Bridge Gap: {gap.skill}</span>
+                                    <button
+                                        type="button"
+                                        className='ats-copy-btn'
+                                        onClick={() => copyBullet(bulletText, idx)}
+                                    >
+                                        {copiedIndex === idx ? "✓ Copied!" : "📋 Copy Bullet"}
+                                    </button>
+                                </div>
+                                <p className='ats-fix-item__text'>"{bulletText}"</p>
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+        </section>
+    );
+};
+
+// ── 60-Second Elevator Pitch Component ─────────────────────────────────────────
+const ElevatorPitchView = ({ interviewId }) => {
+    const [pitchData, setPitchData] = useState(null)
+    const [isLoading, setIsLoading] = useState(false)
+    const [secondsLeft, setSecondsLeft] = useState(60)
+    const [isTimerRunning, setIsTimerRunning] = useState(false)
+    const timerRef = useRef(null)
+
+    useEffect(() => {
+        loadPitch()
+        return () => {
+            if (timerRef.current) clearInterval(timerRef.current)
+            window.speechSynthesis?.cancel()
+        }
+    }, [interviewId])
+
+    const loadPitch = async () => {
+        setIsLoading(true)
+        try {
+            const res = await getElevatorPitch(interviewId)
+            setPitchData(res.pitchData)
+        } catch (err) {
+            console.error("Failed to load elevator pitch:", err)
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
+    const toggleTimer = () => {
+        if (isTimerRunning) {
+            clearInterval(timerRef.current)
+            setIsTimerRunning(false)
+        } else {
+            if (secondsLeft === 0) setSecondsLeft(60)
+            setIsTimerRunning(true)
+            timerRef.current = setInterval(() => {
+                setSecondsLeft(prev => {
+                    if (prev <= 1) {
+                        clearInterval(timerRef.current)
+                        setIsTimerRunning(false)
+                        return 0
+                    }
+                    return prev - 1
+                })
+            }, 1000)
+        }
+    }
+
+    const resetTimer = () => {
+        clearInterval(timerRef.current)
+        setIsTimerRunning(false)
+        setSecondsLeft(60)
+    }
+
+    const listenToPitch = () => {
+        if (!pitchData?.pitch) return
+        window.speechSynthesis.cancel()
+        const utterance = new SpeechSynthesisUtterance(pitchData.pitch)
+        utterance.rate = 0.95
+        window.speechSynthesis.speak(utterance)
+    }
+
+    return (
+        <section className='pitch-page'>
+            <div className='content-header'>
+                <h2>60-Second "Tell Me About Yourself" Pitch</h2>
+                <span className='content-header__count'>Practice Teleprompter</span>
+            </div>
+
+            {isLoading && (
+                <div className='pitch-loading'>
+                    <div className='generating-overlay__spinner' style={{ width: '40px', height: '40px' }}>
+                        <svg viewBox="0 0 50 50" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="25" cy="25" r="20" fill="none" strokeWidth="4" />
+                        </svg>
+                    </div>
+                    <p>Synthesizing your tailored 60-second pitch...</p>
+                </div>
+            )}
+
+            {!isLoading && pitchData && (
+                <>
+                    {/* Teleprompter Box */}
+                    <div className='teleprompter-card'>
+                        <div className='teleprompter-card__header'>
+                            <div className='teleprompter-timer-badge'>
+                                ⏱️ {secondsLeft}s left
+                            </div>
+                            <div className='teleprompter-controls'>
+                                <button
+                                    type="button"
+                                    className={`button primary-button teleprompter-btn ${isTimerRunning ? 'teleprompter-btn--pause' : ''}`}
+                                    onClick={toggleTimer}
+                                >
+                                    {isTimerRunning ? "⏸ Pause Rehearsal" : "▶ Start 60s Rehearsal"}
+                                </button>
+                                <button type="button" className='mock-clear-btn' onClick={resetTimer}>
+                                    Reset
+                                </button>
+                                <button type="button" className='mock-clear-btn' onClick={listenToPitch} title="Listen to pitch cadence">
+                                    🔊 Listen Aloud
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className='teleprompter-body'>
+                            <p className='teleprompter-script'>
+                                "{pitchData.pitch}"
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Breakdown Cards */}
+                    <div className='pitch-breakdown-grid'>
+                        <div className='pitch-mini-card'>
+                            <span className='pitch-step-pill'>Phase 1: The Hook (0-10s)</span>
+                            <h4>Professional Identity</h4>
+                            <p>{pitchData.hook}</p>
+                        </div>
+                        <div className='pitch-mini-card'>
+                            <span className='pitch-step-pill'>Phase 2: Core Proof (10-40s)</span>
+                            <h4>Proven Track Record & Wins</h4>
+                            <p>{pitchData.coreProof}</p>
+                        </div>
+                        <div className='pitch-mini-card'>
+                            <span className='pitch-step-pill'>Phase 3: The Closer (40-60s)</span>
+                            <h4>Role Alignment & Urgency</h4>
+                            <p>{pitchData.closer}</p>
+                        </div>
+                    </div>
+                </>
+            )}
+        </section>
     )
 }
 
@@ -366,6 +797,14 @@ const Interview = () => {
                                 ))}
                             </div>
                         </section>
+                    )}
+
+                    {activeNav === 'ats-heatmap' && (
+                        <AtsHeatmapView report={report} />
+                    )}
+
+                    {activeNav === 'pitch' && (
+                        <ElevatorPitchView interviewId={interviewId} />
                     )}
 
                     {activeNav === 'roadmap' && (

@@ -80,3 +80,24 @@ export const deleteInterviewReportById = async (id) => {
     const response = await api.delete(`/api/interview/report/${id}`)
     return response.data
 }
+
+/**
+ * @description Service to evaluate candidate's practice interview answer.
+ */
+export const evaluateCandidateAnswer = async ({ question, intention, modelAnswer, candidateAnswer }) => {
+    const response = await api.post("/api/interview/evaluate-answer", {
+        question,
+        intention,
+        modelAnswer,
+        candidateAnswer
+    })
+    return response.data
+}
+
+/**
+ * @description Service to get a customized 60-second elevator pitch.
+ */
+export const getElevatorPitch = async (interviewId) => {
+    const response = await api.get(`/api/interview/elevator-pitch/${interviewId}`)
+    return response.data
+}

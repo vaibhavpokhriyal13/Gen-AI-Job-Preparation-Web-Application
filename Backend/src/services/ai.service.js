@@ -523,7 +523,162 @@ Including every project and every skill is mandatory. Missing even one project f
 }
 
 
+async function evaluateAnswer({ question, intention, modelAnswer, candidateAnswer }) {
+    const prompt = `You are an elite technical and behavioral interview coach.
+Evaluate the candidate's spoken or written practice answer for this interview question.
+
+Question: ${question}
+Interviewer Intention: ${intention || "Assess depth of knowledge and problem solving"}
+Model Answer: ${modelAnswer || "A complete, structured answer covering concepts and outcomes"}
+
+Candidate Answer:
+"${candidateAnswer}"
+
+CRITICAL INSTRUCTIONS:
+1. Provide a rigorous, constructive evaluation in strict JSON format.
+2. Score the candidate from 1 to 10 (10 being exceptional, 7-8 solid, below 5 weak).
+3. Evaluate whether they demonstrated the STAR method (Situation, Task, Action, Result) if applicable, or gave a structured technical explanation.
+4. Detect filler words or hesitant phrases (e.g., "um", "uh", "like", "basically", "you know", "kind of").
+5. List key strengths and actionable improvements.
+
+JSON Output Structure:
+{
+  "score": 8,
+  "summary": "Concise summary feedback (2-3 sentences)",
+  "starCheck": {
+    "hasSituation": true,
+    "hasTask": true,
+    "hasAction": true,
+    "hasResult": false
+  },
+  "strengths": ["Strength 1", "Strength 2"],
+  "improvements": ["Improvement 1", "Improvement 2"],
+  "fillerWords": {
+    "count": 2,
+    "detected": ["um", "basically"]
+  }
+}`;
+
+    const responseSchema = {
+        type: "object",
+        properties: {
+            score: { type: "number" },
+            summary: { type: "string" },
+            starCheck: {
+                type: "object",
+                properties: {
+                    hasSituation: { type: "boolean" },
+                    hasTask: { type: "boolean" },
+                    hasAction: { type: "boolean" },
+                    hasResult: { type: "boolean" }
+                },
+                required: ["hasSituation", "hasTask", "hasAction", "hasResult"]
+            },
+            strengths: {
+                type: "array",
+                items: { type: "string" }
+            },
+            improvements: {
+                type: "array",
+                items: { type: "string" }
+            },
+            fillerWords: {
+                type: "object",
+                properties: {
+                    count: { type: "number" },
+                    detected: {
+                        type: "array",
+                        items: { type: "string" }
+                    }
+                },
+                required: ["count", "detected"]
+            }
+        },
+        required: ["score", "summary", "starCheck", "strengths", "improvements", "fillerWords"]
+    };
+
+    const response = await callAiWithFallback({
+        contents: prompt,
+        config: {
+            responseMimeType: "application/json",
+            responseSchema: responseSchema
+        },
+        modelsToTry: ["gemini-2.5-flash", "gemini-2.5-flash-lite"]
+    });
+
+    return JSON.parse(response.text);
+}
+
+
+async function generateElevatorPitch({ resume, jobDescription, selfDescription, roleTitle }) {
+    const cleanResume = typeof resume === 'object' && resume !== null
+        ? (resume.text || JSON.stringify(resume))
+        : String(resume || "").trim();
+    const cleanSelfDesc = typeof selfDescription === 'string' ? selfDescription.trim() : (selfDescription ? String(selfDescription).trim() : "");
+    const cleanJobDesc = typeof jobDescription === 'string' ? jobDescription.trim() : (jobDescription ? String(jobDescription).trim() : "");
+
+    const prompt = `You are a premier executive career and interview coach.
+Craft a compelling, authentic, and metric-focused 60-Second Elevator Pitch answering "Tell me about yourself" for a candidate interviewing for the role: "${roleTitle || 'Target Role'}".
+
+Candidate Profile:
+---
+Resume: ${cleanResume}
+---
+Self Description: ${cleanSelfDesc}
+---
+Target Job Description:
+${cleanJobDesc}
+
+GUIDELINES:
+1. Pacing: Approximately 130-150 spoken words (~60 seconds when spoken at a natural rate).
+2. Structure:
+   - The Hook (first 10 seconds): Identity, background, and core technical domain expertise.
+   - The Core Proof (30 seconds): 1-2 major quantified achievements with relevant tech stacks directly addressing the target role.
+   - The Closer (20 seconds): Why this company/role is the exact next step and what immediate value the candidate brings.
+3. Tone: Confident, articulate, natural, non-arrogant, first-person ("I").
+
+JSON Output Structure:
+{
+  "pitch": "Complete conversational 60-second spoken script.",
+  "hook": "Opening hook statement",
+  "coreProof": "Key accomplishment statement",
+  "closer": "Forward-looking closing statement",
+  "keyKeywords": ["Keyword1", "Keyword2", "Keyword3"],
+  "estimatedSeconds": 58
+}`;
+
+    const responseSchema = {
+        type: "object",
+        properties: {
+            pitch: { type: "string" },
+            hook: { type: "string" },
+            coreProof: { type: "string" },
+            closer: { type: "string" },
+            keyKeywords: {
+                type: "array",
+                items: { type: "string" }
+            },
+            estimatedSeconds: { type: "number" }
+        },
+        required: ["pitch", "hook", "coreProof", "closer", "keyKeywords", "estimatedSeconds"]
+    };
+
+    const response = await callAiWithFallback({
+        contents: prompt,
+        config: {
+            responseMimeType: "application/json",
+            responseSchema: responseSchema
+        },
+        modelsToTry: ["gemini-2.5-flash", "gemini-2.5-flash-lite"]
+    });
+
+    return JSON.parse(response.text);
+}
+
+
 module.exports = {
     generateInterviewReport,
-    generateResumePDF
+    generateResumePDF,
+    evaluateAnswer,
+    generateElevatorPitch
 };

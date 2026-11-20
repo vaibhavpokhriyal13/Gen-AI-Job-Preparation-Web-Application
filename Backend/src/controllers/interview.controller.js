@@ -1,5 +1,5 @@
 const pdfParse = require('pdf-parse')
-const { generateInterviewReport, generateResumePDF } = require("../services/ai.service")
+const { generateInterviewReport, generateResumePDF, evaluateAnswer, generateElevatorPitch } = require("../services/ai.service")
 const interviewReportModel = require("../models/interviewReport.model")
 
 
@@ -214,10 +214,77 @@ async function deleteInterviewReportController(req, res) {
     }
 }
 
+/**
+ * @description Controller to evaluate a practice interview answer using AI.
+ */
+async function evaluateAnswerController(req, res) {
+    try {
+        const { question, intention, modelAnswer, candidateAnswer } = req.body;
+        if (!question || !candidateAnswer || !candidateAnswer.trim()) {
+            return res.status(400).json({
+                message: "Both the question and your practice answer are required for evaluation."
+            });
+        }
+
+        const evaluation = await evaluateAnswer({
+            question,
+            intention,
+            modelAnswer,
+            candidateAnswer
+        });
+
+        res.status(200).json({
+            message: "Answer evaluated successfully",
+            evaluation
+        });
+    } catch (error) {
+        console.error("Error evaluating answer:", error);
+        res.status(500).json({
+            message: "Failed to evaluate answer with AI. Please try again.",
+            error: error.message
+        });
+    }
+}
+
+/**
+ * @description Controller to generate a tailored 60-second elevator pitch.
+ */
+async function getElevatorPitchController(req, res) {
+    try {
+        const { interviewId } = req.params;
+        const report = await interviewReportModel.findOne({ _id: interviewId, user: req.user.id });
+        if (!report) {
+            return res.status(404).json({
+                message: "Interview report not found"
+            });
+        }
+
+        const pitchData = await generateElevatorPitch({
+            resume: report.resume,
+            jobDescription: report.jobDescription,
+            selfDescription: report.selfDescription,
+            roleTitle: report.title
+        });
+
+        res.status(200).json({
+            message: "Elevator pitch generated successfully",
+            pitchData
+        });
+    } catch (error) {
+        console.error("Error generating elevator pitch:", error);
+        res.status(500).json({
+            message: "Failed to generate elevator pitch. Please try again.",
+            error: error.message
+        });
+    }
+}
+
 module.exports = { 
     generateInterviewReportController, 
     getInterviewReportByIdController, 
     getAllInterviewReportsController, 
     generateResumePdfController,
-    deleteInterviewReportController
+    deleteInterviewReportController,
+    evaluateAnswerController,
+    getElevatorPitchController
 }

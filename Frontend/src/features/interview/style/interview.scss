@@ -454,6 +454,586 @@ $severity-low: #3fb950;
             border: 1px solid rgba(#3fb950, 0.2);
         }
     }
+
+    &__practice-toggle {
+        margin-top: 0.5rem;
+        padding-top: 0.5rem;
+        border-top: 1px dashed rgba($border-color, 0.8);
+    }
+}
+
+.practice-toggle-btn {
+    width: 100%;
+    background: rgba($accent, 0.06);
+    border: 1px solid rgba($accent, 0.22);
+    border-radius: 0.45rem;
+    color: lighten($accent, 5%);
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 0.5rem 0.8rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: all 0.2s ease;
+
+    &:hover {
+        background: rgba($accent, 0.14);
+        border-color: rgba($accent, 0.4);
+    }
+
+    &--open {
+        background: rgba($accent, 0.18);
+        border-color: $accent;
+    }
+
+    .practice-toggle-badge {
+        font-size: 0.65rem;
+        background: $accent;
+        color: #fff;
+        padding: 0.1rem 0.45rem;
+        border-radius: 1rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+}
+
+// ── Voice Mock Practice Styles ────────────────────────────────────────────────
+.mock-practice {
+    margin-top: 0.75rem;
+    background: #141923;
+    border: 1px solid #232b3c;
+    border-radius: 0.6rem;
+    padding: 0.85rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+
+    &__header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    &__title {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: #e6edf3;
+    }
+
+    &__textarea {
+        width: 100%;
+        box-sizing: border-box;
+        background: #0d1117;
+        border: 1px solid #2a3348;
+        border-radius: 0.45rem;
+        color: #e6edf3;
+        font-family: inherit;
+        font-size: 0.82rem;
+        line-height: 1.5;
+        padding: 0.6rem;
+        resize: vertical;
+        outline: none;
+
+        &:focus {
+            border-color: $accent;
+        }
+    }
+
+    &__actions {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+    }
+}
+
+.mock-mic-btn {
+    background: rgba(255, 45, 120, 0.1);
+    border: 1px solid rgba(255, 45, 120, 0.3);
+    color: #ff2d78;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.3rem 0.65rem;
+    border-radius: 2rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    transition: all 0.2s ease;
+
+    &:hover {
+        background: rgba(255, 45, 120, 0.2);
+    }
+
+    &--active {
+        background: #ff2d78;
+        color: #fff;
+        border-color: #ff2d78;
+        animation: pulseSpeaker 1.2s infinite ease-in-out;
+    }
+
+    .mock-mic-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background-color: currentColor;
+    }
+}
+
+.mock-eval-btn {
+    padding: 0.45rem 1rem !important;
+    font-size: 0.8rem !important;
+    gap: 0.4rem;
+    border-radius: 0.4rem !important;
+}
+
+.mock-clear-btn {
+    background: transparent;
+    border: 1px solid #2a3348;
+    color: #7d8590;
+    border-radius: 0.4rem;
+    font-size: 0.75rem;
+    padding: 0.4rem 0.75rem;
+    cursor: pointer;
+
+    &:hover {
+        color: #e6edf3;
+        border-color: #444c5e;
+    }
+}
+
+.mock-feedback {
+    background: #18202f;
+    border: 1px solid #28344c;
+    border-radius: 0.5rem;
+    padding: 0.85rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+    margin-top: 0.4rem;
+
+    &__top {
+        display: flex;
+        align-items: center;
+        gap: 0.85rem;
+    }
+
+    &__summary {
+        margin: 0;
+        font-size: 0.82rem;
+        line-height: 1.5;
+        color: #cbd5e1;
+    }
+}
+
+.mock-score-pill {
+    flex-shrink: 0;
+    display: flex;
+    align-items: baseline;
+    padding: 0.35rem 0.65rem;
+    border-radius: 0.5rem;
+    font-weight: 800;
+
+    &--high {
+        background: rgba(34, 197, 94, 0.15);
+        color: #22c55e;
+        border: 1px solid rgba(34, 197, 94, 0.3);
+    }
+    &--med {
+        background: rgba(245, 166, 35, 0.15);
+        color: #f5a623;
+        border: 1px solid rgba(245, 166, 35, 0.3);
+    }
+    &--low {
+        background: rgba(239, 68, 68, 0.15);
+        color: #ef4444;
+        border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    .mock-score-num {
+        font-size: 1.35rem;
+        line-height: 1;
+    }
+    .mock-score-denom {
+        font-size: 0.75rem;
+        opacity: 0.8;
+        margin-left: 1px;
+    }
+}
+
+.mock-star-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.75rem;
+
+    .mock-star-label {
+        font-weight: 600;
+        color: #94a3b8;
+    }
+}
+
+.mock-star-badge {
+    padding: 0.15rem 0.5rem;
+    border-radius: 0.25rem;
+    font-weight: 600;
+
+    &--yes {
+        background: rgba(34, 197, 94, 0.15);
+        color: #22c55e;
+        border: 1px solid rgba(34, 197, 94, 0.3);
+    }
+    &--no {
+        background: rgba(239, 68, 68, 0.12);
+        color: #f87171;
+        border: 1px solid rgba(239, 68, 68, 0.25);
+    }
+}
+
+.mock-filler-row {
+    .mock-filler-tag {
+        font-size: 0.72rem;
+        color: #f59e0b;
+        background: rgba(245, 158, 11, 0.1);
+        border: 1px solid rgba(245, 158, 11, 0.25);
+        border-radius: 0.3rem;
+        padding: 0.2rem 0.5rem;
+        display: inline-block;
+    }
+}
+
+.mock-columns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    font-size: 0.78rem;
+
+    @media (max-width: 600px) {
+        grid-template-columns: 1fr;
+    }
+
+    .mock-col {
+        strong {
+            color: #e2e8f0;
+            display: block;
+            margin-bottom: 0.35rem;
+        }
+
+        ul {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+
+            li {
+                color: #94a3b8;
+                line-height: 1.4;
+            }
+        }
+    }
+}
+
+// ── ATS Heatmap Page Styles ───────────────────────────────────────────────────
+.ats-heatmap-page {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.ats-summary-card {
+    background: #161c28;
+    border-radius: 0.75rem;
+    padding: 1.25rem;
+    border: 1px solid #2a3348;
+
+    &__score {
+        display: flex;
+        align-items: center;
+        gap: 1.25rem;
+    }
+
+    .ats-big-score {
+        font-size: 2.5rem;
+        font-weight: 800;
+        line-height: 1;
+    }
+
+    .ats-summary-text {
+        h3 {
+            margin: 0 0 0.25rem;
+            font-size: 1.15rem;
+        }
+        p {
+            margin: 0;
+            font-size: 0.8rem;
+            color: #94a3b8;
+        }
+    }
+
+    &.ats-pass--high {
+        border-color: rgba(34, 197, 94, 0.35);
+        .ats-big-score, h3 { color: #22c55e; }
+    }
+    &.ats-pass--med {
+        border-color: rgba(245, 166, 35, 0.35);
+        .ats-big-score, h3 { color: #f5a623; }
+    }
+    &.ats-pass--low {
+        border-color: rgba(239, 68, 68, 0.35);
+        .ats-big-score, h3 { color: #ef4444; }
+    }
+}
+
+.ats-split-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+
+    @media (max-width: 768px) {
+        grid-template-columns: 1fr;
+    }
+}
+
+.ats-card {
+    background: #161c28;
+    border: 1px solid #252e42;
+    border-radius: 0.75rem;
+    padding: 1.1rem;
+
+    &__header {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.4rem;
+
+        h3 {
+            margin: 0;
+            font-size: 0.95rem;
+            color: #f1f5f9;
+        }
+    }
+
+    &__desc {
+        margin: 0 0 0.75rem;
+        font-size: 0.75rem;
+        color: #7d8590;
+    }
+}
+
+.ats-badge-cloud {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+}
+
+.ats-badge {
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 0.25rem 0.6rem;
+    border-radius: 0.35rem;
+
+    &--matched {
+        background: rgba(34, 197, 94, 0.12);
+        color: #4ade80;
+        border: 1px solid rgba(34, 197, 94, 0.25);
+    }
+
+    &--gap-high {
+        background: rgba(239, 68, 68, 0.12);
+        color: #f87171;
+        border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    &--gap-medium {
+        background: rgba(245, 166, 35, 0.12);
+        color: #fbbf24;
+        border: 1px solid rgba(245, 166, 35, 0.3);
+    }
+
+    &--gap-low {
+        background: rgba(148, 163, 184, 0.12);
+        color: #cbd5e1;
+        border: 1px solid rgba(148, 163, 184, 0.25);
+    }
+}
+
+.ats-fixes-card {
+    background: #161c28;
+    border: 1px solid #2a3348;
+    border-radius: 0.75rem;
+    padding: 1.25rem;
+
+    .ats-card__header h3 {
+        color: #ff2d78;
+    }
+}
+
+.ats-fixes-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    margin-top: 0.85rem;
+}
+
+.ats-fix-item {
+    background: #0f141d;
+    border: 1px solid #222a3d;
+    border-radius: 0.5rem;
+    padding: 0.85rem;
+
+    &__header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 0.45rem;
+    }
+
+    &__text {
+        margin: 0;
+        font-size: 0.82rem;
+        line-height: 1.5;
+        color: #e2e8f0;
+        font-style: italic;
+    }
+}
+
+.ats-copy-btn {
+    background: rgba(255, 45, 120, 0.12);
+    border: 1px solid rgba(255, 45, 120, 0.3);
+    color: #ff2d78;
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 0.25rem 0.6rem;
+    border-radius: 0.3rem;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:hover {
+        background: rgba(255, 45, 120, 0.25);
+        color: #fff;
+    }
+}
+
+// ── 60-Second Elevator Pitch Styles ───────────────────────────────────────────
+.pitch-page {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.pitch-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 1rem;
+    color: #94a3b8;
+    gap: 1rem;
+}
+
+.teleprompter-card {
+    background: #141a26;
+    border: 1px solid #2d374e;
+    border-radius: 0.85rem;
+    overflow: hidden;
+
+    &__header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.85rem 1.2rem;
+        background: #1b2333;
+        border-bottom: 1px solid #2d374e;
+        flex-wrap: wrap;
+        gap: 0.6rem;
+    }
+}
+
+.teleprompter-timer-badge {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #ff2d78;
+    background: rgba(255, 45, 120, 0.1);
+    border: 1px solid rgba(255, 45, 120, 0.25);
+    padding: 0.3rem 0.75rem;
+    border-radius: 0.45rem;
+}
+
+.teleprompter-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.teleprompter-btn {
+    padding: 0.45rem 1rem !important;
+    font-size: 0.82rem !important;
+    border-radius: 0.4rem !important;
+
+    &--pause {
+        background: #f59e0b !important;
+    }
+}
+
+.teleprompter-body {
+    padding: 1.75rem 1.5rem;
+    background: #0f141f;
+
+    .teleprompter-script {
+        margin: 0;
+        font-size: 1.1rem;
+        line-height: 1.7;
+        color: #f1f5f9;
+        font-weight: 400;
+        letter-spacing: 0.01em;
+    }
+}
+
+.pitch-breakdown-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1rem;
+
+    @media (max-width: 900px) {
+        grid-template-columns: 1fr;
+    }
+}
+
+.pitch-mini-card {
+    background: #161c28;
+    border: 1px solid #252e42;
+    border-radius: 0.65rem;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+
+    h4 {
+        margin: 0;
+        font-size: 0.88rem;
+        color: #f8fafc;
+    }
+
+    p {
+        margin: 0;
+        font-size: 0.78rem;
+        line-height: 1.5;
+        color: #94a3b8;
+    }
+}
+
+.pitch-step-pill {
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: #a78bfa;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
 }
 
 // ── Road Map ──────────────────────────────────────────────────────────────────
