@@ -20,6 +20,7 @@ const PracticeAnswerPanel = ({ question, intention, modelAnswer }) => {
     const [isEvaluating, setIsEvaluating] = useState(false)
     const [evaluation, setEvaluation] = useState(null)
     const recognitionRef = useRef(null)
+    const baseTextRef = useRef('')
 
     const toggleListening = (e) => {
         e.stopPropagation()
@@ -30,7 +31,9 @@ const PracticeAnswerPanel = ({ question, intention, modelAnswer }) => {
         }
 
         if (isListening) {
-            if (recognitionRef.current) recognitionRef.current.stop()
+            if (recognitionRef.current) {
+                try { recognitionRef.current.stop() } catch (e) {}
+            }
             setIsListening(false)
             return
         }
@@ -41,12 +44,15 @@ const PracticeAnswerPanel = ({ question, intention, modelAnswer }) => {
             recognition.interimResults = true
             recognition.lang = 'en-US'
 
+            // Capture initial text so we only append new speech cleanly once
+            baseTextRef.current = answerText ? answerText.trim() + ' ' : ''
+
             recognition.onresult = (event) => {
-                let currentTranscript = ''
-                for (let i = event.resultIndex; i < event.results.length; i++) {
-                    currentTranscript += event.results[i][0].transcript
+                let speechSession = ''
+                for (let i = 0; i < event.results.length; i++) {
+                    speechSession += event.results[i][0].transcript + ' '
                 }
-                setAnswerText(prev => prev ? `${prev} ${currentTranscript}`.replace(/\s+/g, ' ') : currentTranscript)
+                setAnswerText((baseTextRef.current + speechSession).replace(/\s+/g, ' ').trim())
             }
 
             recognition.onerror = (err) => {
@@ -129,7 +135,7 @@ const PracticeAnswerPanel = ({ question, intention, modelAnswer }) => {
                     <button
                         type="button"
                         className='mock-clear-btn'
-                        onClick={() => { setAnswerText(''); setEvaluation(null); }}
+                        onClick={() => { setAnswerText(''); baseTextRef.current = ''; setEvaluation(null); }}
                     >
                         Clear
                     </button>
