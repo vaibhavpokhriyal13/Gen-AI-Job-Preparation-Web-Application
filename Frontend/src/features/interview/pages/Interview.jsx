@@ -21,6 +21,15 @@ const PracticeAnswerPanel = ({ question, intention, modelAnswer }) => {
     const [evaluation, setEvaluation] = useState(null)
     const recognitionRef = useRef(null)
     const baseTextRef = useRef('')
+    const finalTranscriptRef = useRef('')
+
+    useEffect(() => {
+        return () => {
+            if (recognitionRef.current) {
+                try { recognitionRef.current.abort() } catch (e) {}
+            }
+        }
+    }, [])
 
     const toggleListening = (e) => {
         e.stopPropagation()
@@ -44,15 +53,27 @@ const PracticeAnswerPanel = ({ question, intention, modelAnswer }) => {
             recognition.interimResults = true
             recognition.lang = 'en-US'
 
-            // Capture initial text so we only append new speech cleanly once
+            // Snapshot existing text and reset the session's final transcript buffer
             baseTextRef.current = answerText ? answerText.trim() + ' ' : ''
+            finalTranscriptRef.current = ''
 
             recognition.onresult = (event) => {
-                let speechSession = ''
-                for (let i = 0; i < event.results.length; i++) {
-                    speechSession += event.results[i][0].transcript + ' '
+                let interimTranscript = ''
+
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    const transcript = event.results[i][0].transcript
+                    if (event.results[i].isFinal) {
+                        finalTranscriptRef.current += transcript + ' '
+                    } else {
+                        interimTranscript += transcript
+                    }
                 }
-                setAnswerText((baseTextRef.current + speechSession).replace(/\s+/g, ' ').trim())
+
+                const currentCombined = (baseTextRef.current + finalTranscriptRef.current + interimTranscript)
+                    .replace(/\s+/g, ' ')
+                    .trim()
+
+                setAnswerText(currentCombined)
             }
 
             recognition.onerror = (err) => {
@@ -135,7 +156,7 @@ const PracticeAnswerPanel = ({ question, intention, modelAnswer }) => {
                     <button
                         type="button"
                         className='mock-clear-btn'
-                        onClick={() => { setAnswerText(''); baseTextRef.current = ''; setEvaluation(null); }}
+                        onClick={() => { setAnswerText(''); baseTextRef.current = ''; finalTranscriptRef.current = ''; setEvaluation(null); }}
                     >
                         Clear
                     </button>
