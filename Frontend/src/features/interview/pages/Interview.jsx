@@ -17,11 +17,61 @@ const NAV_ITEMS = [
 // ── Sub-components ────────────────────────────────────────────────────────────
 const QuestionCard = ({ item, index }) => {
     const [open, setOpen] = useState(false)
+    const [speakingTarget, setSpeakingTarget] = useState(null) // 'question' | 'answer' | null
+
+    useEffect(() => {
+        return () => {
+            if (window.speechSynthesis) {
+                window.speechSynthesis.cancel()
+            }
+        }
+    }, [])
+
+    const toggleSpeech = (e, text, target) => {
+        e.stopPropagation()
+        if (!('speechSynthesis' in window)) {
+            alert("Audio playback is not supported in this browser.")
+            return
+        }
+
+        if (speakingTarget === target) {
+            window.speechSynthesis.cancel()
+            setSpeakingTarget(null)
+            return
+        }
+
+        window.speechSynthesis.cancel()
+        const utterance = new SpeechSynthesisUtterance(text)
+        utterance.rate = 0.92 // Natural interview pace
+
+        const voices = window.speechSynthesis.getVoices()
+        const naturalVoice = voices.find(v => v.lang.startsWith('en') && (v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('Samantha') || v.name.includes('Daniel')))
+        if (naturalVoice) utterance.voice = naturalVoice
+
+        utterance.onend = () => setSpeakingTarget(null)
+        utterance.onerror = () => setSpeakingTarget(null)
+
+        setSpeakingTarget(target)
+        window.speechSynthesis.speak(utterance)
+    }
+
     return (
         <div className='q-card'>
             <div className='q-card__header' onClick={() => setOpen(o => !o)}>
                 <span className='q-card__index'>Q{index + 1}</span>
                 <p className='q-card__question'>{item.question}</p>
+                <button
+                    type="button"
+                    className={`q-card__speaker ${speakingTarget === 'question' ? 'q-card__speaker--playing' : ''}`}
+                    title={speakingTarget === 'question' ? "Stop audio" : "Listen to question"}
+                    onClick={(e) => toggleSpeech(e, item.question, 'question')}
+                >
+                    {speakingTarget === 'question' ? (
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" /><path d="M15.54 8.46a5 5 0 0 1 0 7.07" /><path d="M19.07 4.93a10 10 0 0 1 0 14.14" /></svg>
+                    ) : (
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" /><path d="M15.54 8.46a5 5 0 0 1 0 7.07" /></svg>
+                    )}
+                </button>
                 <span className={`q-card__chevron ${open ? 'q-card__chevron--open' : ''}`}>
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9" /></svg>
                 </span>
@@ -33,7 +83,18 @@ const QuestionCard = ({ item, index }) => {
                         <p>{item.intention}</p>
                     </div>
                     <div className='q-card__section'>
-                        <span className='q-card__tag q-card__tag--answer'>Model Answer</span>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <span className='q-card__tag q-card__tag--answer'>Model Answer</span>
+                            <button
+                                type="button"
+                                className={`q-card__speaker q-card__speaker--inline ${speakingTarget === 'answer' ? 'q-card__speaker--playing' : ''}`}
+                                title={speakingTarget === 'answer' ? "Stop audio" : "Listen to model answer"}
+                                onClick={(e) => toggleSpeech(e, item.answer, 'answer')}
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" /><path d="M15.54 8.46a5 5 0 0 1 0 7.07" /></svg>
+                                <span>{speakingTarget === 'answer' ? "Stop" : "Listen to Answer"}</span>
+                            </button>
+                        </div>
                         <p>{item.answer}</p>
                     </div>
                 </div>
