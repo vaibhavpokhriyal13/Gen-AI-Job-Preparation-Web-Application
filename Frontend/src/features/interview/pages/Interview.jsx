@@ -537,24 +537,17 @@ const ElevatorPitchView = ({ interviewId }) => {
                         </div>
                     </div>
 
-                    {/* Breakdown Cards */}
-                    <div className='pitch-breakdown-grid'>
-                        <div className='pitch-mini-card'>
-                            <span className='pitch-step-pill'>Phase 1: The Hook (0-10s)</span>
-                            <h4>Professional Identity</h4>
-                            <p>{pitchData.hook}</p>
+                    {/* Compact Key Talking Points */}
+                    {pitchData.keyKeywords?.length > 0 && (
+                        <div className='pitch-keywords-bar'>
+                            <span className='pitch-keywords-bar__label'>Key Points to Hit:</span>
+                            <div className='pitch-keywords-bar__list'>
+                                {pitchData.keyKeywords.map((kw, idx) => (
+                                    <span key={idx} className='pitch-keyword-chip'>{kw}</span>
+                                ))}
+                            </div>
                         </div>
-                        <div className='pitch-mini-card'>
-                            <span className='pitch-step-pill'>Phase 2: Core Proof (10-40s)</span>
-                            <h4>Proven Track Record & Wins</h4>
-                            <p>{pitchData.coreProof}</p>
-                        </div>
-                        <div className='pitch-mini-card'>
-                            <span className='pitch-step-pill'>Phase 3: The Closer (40-60s)</span>
-                            <h4>Role Alignment & Urgency</h4>
-                            <p>{pitchData.closer}</p>
-                        </div>
-                    </div>
+                    )}
                 </>
             )}
         </section>
