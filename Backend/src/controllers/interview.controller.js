@@ -1,5 +1,5 @@
 const pdfParse = require('pdf-parse')
-const { generateInterviewReport, generateResumePDF, evaluateAnswer, generateElevatorPitch } = require("../services/ai.service")
+const { generateInterviewReport, generateResumePDF, evaluateAnswer, generateElevatorPitch, conductLiveInterviewTurn } = require("../services/ai.service")
 const interviewReportModel = require("../models/interviewReport.model")
 
 
@@ -247,15 +247,25 @@ async function evaluateAnswerController(req, res) {
 }
 
 /**
- * @description Controller to generate a tailored 60-second elevator pitch.
+ * @description Controller to generate (or return cached) 60-second elevator pitch.
  */
 async function getElevatorPitchController(req, res) {
     try {
         const { interviewId } = req.params;
+        const regenerate = req.query.regenerate === "true";
         const report = await interviewReportModel.findOne({ _id: interviewId, user: req.user.id });
         if (!report) {
             return res.status(404).json({
                 message: "Interview report not found"
+            });
+        }
+
+        // Return cached elevator pitch if already generated and not regenerating
+        if (!regenerate && report.elevatorPitch && report.elevatorPitch.pitch) {
+            return res.status(200).json({
+                message: "Elevator pitch loaded from cache",
+                pitchData: report.elevatorPitch,
+                cached: true
             });
         }
 
@@ -266,14 +276,58 @@ async function getElevatorPitchController(req, res) {
             roleTitle: report.title
         });
 
+        // Persist in MongoDB so future visits don't burn Gemini quota
+        report.elevatorPitch = pitchData;
+        await report.save();
+
         res.status(200).json({
             message: "Elevator pitch generated successfully",
-            pitchData
+            pitchData,
+            cached: false
         });
     } catch (error) {
         console.error("Error generating elevator pitch:", error);
         res.status(500).json({
             message: "Failed to generate elevator pitch. Please try again.",
+            error: error.message
+        });
+    }
+}
+
+/**
+ * @description Controller to conduct a multi-turn live AI interview with dynamic follow-ups.
+ */
+async function liveInterviewTurnController(req, res) {
+    try {
+        const { interviewId } = req.params;
+        const { history = [], candidateReply = "", turnNumber = 1, maxTurns = 4 } = req.body;
+
+        const report = await interviewReportModel.findOne({ _id: interviewId, user: req.user.id });
+        if (!report) {
+            return res.status(404).json({
+                message: "Interview report not found"
+            });
+        }
+
+        const turnResult = await conductLiveInterviewTurn({
+            resume: report.resume,
+            jobDescription: report.jobDescription,
+            selfDescription: report.selfDescription,
+            roleTitle: report.title,
+            history,
+            candidateReply,
+            turnNumber,
+            maxTurns
+        });
+
+        res.status(200).json({
+            message: "Live interview turn completed",
+            turnResult
+        });
+    } catch (error) {
+        console.error("Error in live interview turn:", error);
+        res.status(500).json({
+            message: "AI interviewer encountered an issue. Please try submitting your response again.",
             error: error.message
         });
     }
@@ -286,5 +340,6 @@ module.exports = {
     generateResumePdfController,
     deleteInterviewReportController,
     evaluateAnswerController,
-    getElevatorPitchController
+    getElevatorPitchController,
+    liveInterviewTurnController
 }

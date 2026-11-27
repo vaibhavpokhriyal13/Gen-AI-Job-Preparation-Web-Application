@@ -95,9 +95,22 @@ export const evaluateCandidateAnswer = async ({ question, intention, modelAnswer
 }
 
 /**
- * @description Service to get a customized 60-second elevator pitch.
+ * @description Service to get a customized 60-second elevator pitch (cached in DB unless regenerate=true).
  */
-export const getElevatorPitch = async (interviewId) => {
-    const response = await api.get(`/api/interview/elevator-pitch/${interviewId}`)
+export const getElevatorPitch = async (interviewId, regenerate = false) => {
+    const response = await api.get(`/api/interview/elevator-pitch/${interviewId}${regenerate ? '?regenerate=true' : ''}`)
+    return response.data
+}
+
+/**
+ * @description Service to conduct a multi-turn live AI interview turn with dynamic follow-ups.
+ */
+export const sendLiveInterviewTurn = async (interviewId, { history, candidateReply, turnNumber, maxTurns = 4 }) => {
+    const response = await api.post(`/api/interview/live-turn/${interviewId}`, {
+        history,
+        candidateReply,
+        turnNumber,
+        maxTurns
+    })
     return response.data
 }

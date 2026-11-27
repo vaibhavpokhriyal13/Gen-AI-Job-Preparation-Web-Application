@@ -86,8 +86,9 @@ CRITICAL INSTRUCTION:
   "behavioralQuestion": [
     { "question": "...", "intention": "...", "answer": "..." }
   ],
+  "matchedSkills": ["React.js", "Node.js", "REST APIs"],
   "skillGaps": [
-    { "skill": "...", "severity": "low" } 
+    { "skill": "...", "severity": "low", "bulletFix": "A strong, quantifiable ATS-friendly resume bullet point demonstrating this skill." } 
   ],
   "preparationPlan": [
     { "day": 1, "focus": "...", "tasks": ["...", "..."] }
@@ -97,7 +98,9 @@ RULES:
 1. DO NOT stringify the inner objects inside the arrays. Return actual JSON objects.
 2. DO NOT invent new keys. You MUST use the exact keys shown in the structure above.
 3. The 'severity' in skillGaps MUST be exactly "low", "medium", or "high".
-4. "preparationPlan" must contain exactly 7 objects (one for each day from 1 to 7).
+4. "matchedSkills" must list 4 to 10 concrete skills/technologies found in the candidate's profile that match the job description.
+5. For each item in "skillGaps", "bulletFix" must be a realistic, tailored, metric-driven resume bullet point the candidate could adapt to bridge that gap.
+6. "preparationPlan" must contain exactly 7 objects (one for each day from 1 to 7).
 Candidate Details:
 ---
 Resume: ${cleanResume}
@@ -139,15 +142,20 @@ Job Description: ${cleanJobDesc}
                     required: ["question", "intention", "answer"]
                 }
             },
+            matchedSkills: {
+                type: "array",
+                items: { type: "string" }
+            },
             skillGaps: {
                 type: "array",
                 items: {
                     type: "object",
                     properties: {
                         skill: { type: "string" },
-                        severity: { type: "string", enum: ["low", "medium", "high"] }
+                        severity: { type: "string", enum: ["low", "medium", "high"] },
+                        bulletFix: { type: "string" }
                     },
-                    required: ["skill", "severity"]
+                    required: ["skill", "severity", "bulletFix"]
                 }
             },
             preparationPlan: {
@@ -166,7 +174,7 @@ Job Description: ${cleanJobDesc}
                 }
             }
         },
-        required: ["isValid", "errorMessage", "matchScore", "title", "technicalQuestion", "behavioralQuestion", "skillGaps", "preparationPlan"]
+        required: ["isValid", "errorMessage", "matchScore", "title", "technicalQuestion", "behavioralQuestion", "matchedSkills", "skillGaps", "preparationPlan"]
     };
 
     const response = await callAiWithFallback({
@@ -676,9 +684,104 @@ JSON Output Structure:
 }
 
 
+async function conductLiveInterviewTurn({ resume, jobDescription, selfDescription, roleTitle, history = [], candidateReply = "", turnNumber = 1, maxTurns = 4 }) {
+    const cleanResume = typeof resume === 'object' && resume !== null
+        ? (resume.text || JSON.stringify(resume))
+        : String(resume || "").trim();
+    const cleanSelfDesc = typeof selfDescription === 'string' ? selfDescription.trim() : (selfDescription ? String(selfDescription).trim() : "");
+    const cleanJobDesc = typeof jobDescription === 'string' ? jobDescription.trim() : (jobDescription ? String(jobDescription).trim() : "");
+
+    const isFinalTurn = turnNumber > maxTurns;
+    const transcriptText = history.length > 0
+        ? history.map((m) => `${m.role === 'ai' ? 'Interviewer' : 'Candidate'}: ${m.text}`).join("\n")
+        : "(Interview just started)";
+
+    const prompt = `You are a Principal Software Engineer & Technical Interviewer conducting a live, realistic, multi-turn technical & behavioral interview for the role: "${roleTitle || 'Software Engineer'}".
+
+Candidate Profile:
+---
+Resume: ${cleanResume}
+Self Description: ${cleanSelfDesc}
+---
+Target Job Description:
+${cleanJobDesc}
+
+Interview Transcript So Far:
+${transcriptText}
+${candidateReply ? `Candidate's Latest Answer:\n"${candidateReply}"` : ""}
+
+Current State: Turn ${turnNumber} of ${maxTurns}.
+${isFinalTurn
+    ? `INSTRUCTIONS (FINAL WRAP-UP & VERDICT):
+1. The interview has concluded. Thank the candidate warmly in "aiMessage" (1-2 sentences).
+2. Set "isComplete" to true, "reaction" to "", "nextQuestion" to "", and "currentTopic" to "Final Evaluation".
+3. Populate "verdict" with an honest, rigorous Hiring Committee evaluation based strictly on the candidate's actual answers in the transcript:
+   - decision: "Strong Hire", "Hire", "Lean Hire", or "Lean No Hire"
+   - overallScore: integer 0-100
+   - technicalDepth: integer 1-10
+   - communication: integer 1-10
+   - problemSolving: integer 1-10
+   - summary: 2-3 sentence hiring committee summary
+   - strengths: 2-4 specific strengths demonstrated in the transcript
+   - growthAreas: 2-4 specific areas to improve`
+    : turnNumber === 1 && history.length === 0
+    ? `INSTRUCTIONS (OPENING QUESTION):
+1. Set "isComplete" to false.
+2. Greet the candidate briefly and ask your opening technical/project deep-dive question tailored to a specific project or skill in their resume vs. the target job description.
+3. Put the spoken greeting + question in "aiMessage", set "reaction" to "", set "nextQuestion" to the core question, and set "currentTopic" to a 2-4 word topic label (e.g. "System Architecture").
+4. Leave "verdict" as null.`
+    : `INSTRUCTIONS (DYNAMIC FOLLOW-UP TURN ${turnNumber} OF ${maxTurns}):
+1. Set "isComplete" to false.
+2. Read the candidate's latest answer carefully. Give a brief, natural 1-sentence interviewer reaction acknowledging a specific detail they mentioned (or gently noting if they missed something).
+3. Ask a sharp, realistic follow-up question that either probes deeper into a technical choice they just mentioned OR pivots to an important untested requirement from the JD.
+4. Put the combined natural spoken response (reaction + follow-up question) in "aiMessage", the 1-sentence reaction in "reaction", the standalone follow-up question in "nextQuestion", and a 2-4 word "currentTopic" label.
+5. Leave "verdict" as null.`
+}`;
+
+    const responseSchema = {
+        type: "object",
+        properties: {
+            isComplete: { type: "boolean" },
+            aiMessage: { type: "string" },
+            reaction: { type: "string" },
+            nextQuestion: { type: "string" },
+            currentTopic: { type: "string" },
+            verdict: {
+                type: "object",
+                nullable: true,
+                properties: {
+                    decision: { type: "string", enum: ["Strong Hire", "Hire", "Lean Hire", "Lean No Hire"] },
+                    overallScore: { type: "number" },
+                    technicalDepth: { type: "number" },
+                    communication: { type: "number" },
+                    problemSolving: { type: "number" },
+                    summary: { type: "string" },
+                    strengths: { type: "array", items: { type: "string" } },
+                    growthAreas: { type: "array", items: { type: "string" } }
+                },
+                required: ["decision", "overallScore", "technicalDepth", "communication", "problemSolving", "summary", "strengths", "growthAreas"]
+            }
+        },
+        required: ["isComplete", "aiMessage", "reaction", "nextQuestion", "currentTopic"]
+    };
+
+    const response = await callAiWithFallback({
+        contents: prompt,
+        config: {
+            responseMimeType: "application/json",
+            responseSchema: responseSchema
+        },
+        modelsToTry: ["gemini-2.5-flash", "gemini-2.5-flash-lite"]
+    });
+
+    return JSON.parse(response.text);
+}
+
+
 module.exports = {
     generateInterviewReport,
     generateResumePDF,
     evaluateAnswer,
-    generateElevatorPitch
+    generateElevatorPitch,
+    conductLiveInterviewTurn
 };

@@ -80,6 +80,10 @@ const skillGapSchema=new mongoose.Schema({
         type:String,
         enum:["low","medium","high"],
         required:[true,"Severity is required"]
+    },
+    bulletFix:{
+        type:String,
+        default:""
     }
 },{
     _id:false
@@ -124,6 +128,18 @@ const interviewReportSchema=new mongoose.Schema({
     technicalQuestion:[technicalQuestionSchema],
     behavioralQuestion:[behavioralQuestionSchema],
     skillGaps:[skillGapSchema],
+    matchedSkills:{
+        type:[String],
+        default:[]
+    },
+    elevatorPitch:{
+        pitch: String,
+        hook: String,
+        coreProof: String,
+        closer: String,
+        keyKeywords: [String],
+        estimatedSeconds: Number
+    },
     preparationPlan:[preparationPlanSchema],
     user:{
         type:mongoose.Schema.Types.ObjectId,

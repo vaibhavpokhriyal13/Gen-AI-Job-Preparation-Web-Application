@@ -3,9 +3,10 @@ import '../style/interview.scss'
 import { useInterview } from '../hooks/useInterview'
 import { useParams, useNavigate } from 'react-router'
 import { useAuth } from '../../auth/hooks/useAuth'
-import { evaluateCandidateAnswer, getElevatorPitch } from '../services/interview.api'
+import { evaluateCandidateAnswer, getElevatorPitch, sendLiveInterviewTurn } from '../services/interview.api'
 
 const NAV_ITEMS = [
+    { id: 'live-interview', label: 'Live AI Interview', icon: (<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>) },
     { id: 'technical', label: 'Technical Questions', icon: (<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 18 22 12 16 6" /><polyline points="8 6 2 12 8 18" /></svg>) },
     { id: 'behavioral', label: 'Behavioral Questions', icon: (<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>) },
     { id: 'ats-heatmap', label: 'ATS Heatmap', icon: (<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24"/><path d="m14.83 9.17 4.24-4.24"/><path d="m14.83 14.83 4.24 4.24"/><path d="m9.17 14.83-4.24 4.24"/></svg>) },
@@ -369,11 +370,15 @@ const AtsHeatmapView = ({ report }) => {
                     </div>
                     <p className='ats-card__desc'>Skills and keywords successfully detected in your background:</p>
                     <div className='ats-badge-cloud'>
-                        {['Core Role Alignment', 'Target Tech Stack', 'Domain Familiarity', 'Relevant Problem Solving', 'Architecture & System Awareness'].map((skill, i) => (
-                            <span key={i} className='ats-badge ats-badge--matched'>
-                                ✓ {skill}
-                            </span>
-                        ))}
+                        {report.matchedSkills?.length > 0 ? (
+                            report.matchedSkills.map((skill, i) => (
+                                <span key={i} className='ats-badge ats-badge--matched'>
+                                    ✓ {skill}
+                                </span>
+                            ))
+                        ) : (
+                            <span className='ats-card__desc'>Generate a new report to view extracted matched skills for this profile.</span>
+                        )}
                     </div>
                 </div>
 
@@ -398,11 +403,11 @@ const AtsHeatmapView = ({ report }) => {
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ff2d78" strokeWidth="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
                     <h3>1-Click Resume Bullet Fixes (Bridge Your ATS Gaps)</h3>
                 </div>
-                <p className='ats-card__desc'>Copy-paste these quantifiable bullet points directly into your resume to immediately boost your ATS keyword score:</p>
+                <p className='ats-card__desc'>Copy-paste these tailored bullet points into your resume to bridge missing JD keywords:</p>
                 
                 <div className='ats-fixes-list'>
                     {report.skillGaps?.map((gap, idx) => {
-                        const bulletText = `Leveraged ${gap.skill} within full lifecycle engineering tasks, ensuring high performance, fault tolerance, and strict compliance with production specifications.`;
+                        const bulletText = gap.bulletFix || `Designed and implemented production workflows utilizing ${gap.skill}, improving system reliability and aligning directly with target role requirements.`;
                         return (
                             <div key={idx} className='ats-fix-item'>
                                 <div className='ats-fix-item__header'>
@@ -441,10 +446,10 @@ const ElevatorPitchView = ({ interviewId }) => {
         }
     }, [interviewId])
 
-    const loadPitch = async () => {
+    const loadPitch = async (regenerate = false) => {
         setIsLoading(true)
         try {
-            const res = await getElevatorPitch(interviewId)
+            const res = await getElevatorPitch(interviewId, regenerate)
             setPitchData(res.pitchData)
         } catch (err) {
             console.error("Failed to load elevator pitch:", err)
@@ -527,6 +532,9 @@ const ElevatorPitchView = ({ interviewId }) => {
                                 <button type="button" className='mock-clear-btn' onClick={listenToPitch} title="Listen to pitch cadence">
                                     🔊 Listen Aloud
                                 </button>
+                                <button type="button" className='mock-clear-btn' onClick={() => loadPitch(true)} title="Generate a fresh pitch">
+                                    ↻ Regenerate
+                                </button>
                             </div>
                         </div>
 
@@ -549,6 +557,318 @@ const ElevatorPitchView = ({ interviewId }) => {
                         </div>
                     )}
                 </>
+            )}
+        </section>
+    )
+}
+
+// ── Multi-Turn Live AI Interviewer Component ──────────────────────────────────
+const LiveInterviewView = ({ interviewId, roleTitle }) => {
+    const MAX_TURNS = 4
+    const [started, setStarted] = useState(false)
+    const [messages, setMessages] = useState([]) // { role: 'ai' | 'user', text: string, topic?: string }
+    const [turnNumber, setTurnNumber] = useState(1)
+    const [currentTopic, setCurrentTopic] = useState('')
+    const [replyText, setReplyText] = useState('')
+    const [isThinking, setIsThinking] = useState(false)
+    const [isListening, setIsListening] = useState(false)
+    const [autoSpeak, setAutoSpeak] = useState(true)
+    const [verdict, setVerdict] = useState(null)
+
+    const recognitionRef = useRef(null)
+    const baseTextRef = useRef('')
+    const finalTranscriptRef = useRef('')
+    const chatEndRef = useRef(null)
+
+    useEffect(() => {
+        chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }, [messages, isThinking, verdict])
+
+    useEffect(() => {
+        return () => {
+            if (recognitionRef.current) {
+                try { recognitionRef.current.abort() } catch (e) {}
+            }
+            window.speechSynthesis?.cancel()
+        }
+    }, [])
+
+    const speakText = (text) => {
+        if (!autoSpeak || !('speechSynthesis' in window) || !text) return
+        window.speechSynthesis.cancel()
+        const utterance = new SpeechSynthesisUtterance(text)
+        utterance.rate = 0.95
+        const voices = window.speechSynthesis.getVoices()
+        const naturalVoice = voices.find(v => v.lang.startsWith('en') && (v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('Samantha') || v.name.includes('Daniel')))
+        if (naturalVoice) utterance.voice = naturalVoice
+        window.speechSynthesis.speak(utterance)
+    }
+
+    const startInterview = async () => {
+        setStarted(true)
+        setMessages([])
+        setTurnNumber(1)
+        setVerdict(null)
+        setReplyText('')
+        setIsThinking(true)
+        try {
+            const res = await sendLiveInterviewTurn(interviewId, {
+                history: [],
+                candidateReply: '',
+                turnNumber: 1,
+                maxTurns: MAX_TURNS
+            })
+            const turn = res.turnResult
+            setCurrentTopic(turn.currentTopic || 'Opening')
+            setMessages([{ role: 'ai', text: turn.aiMessage, topic: turn.currentTopic }])
+            speakText(turn.aiMessage)
+        } catch (err) {
+            console.error("Failed to start live interview:", err)
+            alert(err.response?.data?.message || "Failed to start live interview. Please try again.")
+            setStarted(false)
+        } finally {
+            setIsThinking(false)
+        }
+    }
+
+    const toggleMic = () => {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+        if (!SpeechRecognition) {
+            alert("Speech recognition is not supported in this browser. You can type your answer instead!")
+            return
+        }
+
+        if (isListening) {
+            if (recognitionRef.current) {
+                try { recognitionRef.current.stop() } catch (e) {}
+            }
+            setIsListening(false)
+            return
+        }
+
+        try {
+            window.speechSynthesis?.cancel()
+            const recognition = new SpeechRecognition()
+            recognition.continuous = true
+            recognition.interimResults = true
+            recognition.lang = 'en-US'
+
+            baseTextRef.current = replyText ? replyText.trim() + ' ' : ''
+            finalTranscriptRef.current = ''
+
+            recognition.onresult = (event) => {
+                let interimTranscript = ''
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    const transcript = event.results[i][0].transcript
+                    if (event.results[i].isFinal) {
+                        finalTranscriptRef.current += transcript + ' '
+                    } else {
+                        interimTranscript += transcript
+                    }
+                }
+                const combined = (baseTextRef.current + finalTranscriptRef.current + interimTranscript)
+                    .replace(/\s+/g, ' ')
+                    .trim()
+                setReplyText(combined)
+            }
+
+            recognition.onerror = () => setIsListening(false)
+            recognition.onend = () => setIsListening(false)
+
+            recognitionRef.current = recognition
+            recognition.start()
+            setIsListening(true)
+        } catch (err) {
+            console.error("Mic error:", err)
+            setIsListening(false)
+        }
+    }
+
+    const submitReply = async () => {
+        const trimmed = replyText.trim()
+        if (!trimmed || isThinking) return
+
+        if (isListening && recognitionRef.current) {
+            try { recognitionRef.current.stop() } catch (e) {}
+            setIsListening(false)
+        }
+
+        const updatedHistory = [...messages, { role: 'user', text: trimmed }]
+        const nextTurn = turnNumber + 1
+        setMessages(updatedHistory)
+        setReplyText('')
+        baseTextRef.current = ''
+        finalTranscriptRef.current = ''
+        setIsThinking(true)
+
+        try {
+            const res = await sendLiveInterviewTurn(interviewId, {
+                history: updatedHistory,
+                candidateReply: trimmed,
+                turnNumber: nextTurn,
+                maxTurns: MAX_TURNS
+            })
+            const turn = res.turnResult
+            setTurnNumber(nextTurn)
+            setCurrentTopic(turn.currentTopic || '')
+            setMessages(prev => [...prev, { role: 'ai', text: turn.aiMessage, topic: turn.currentTopic }])
+            speakText(turn.aiMessage)
+
+            if (turn.isComplete && turn.verdict) {
+                setVerdict(turn.verdict)
+            }
+        } catch (err) {
+            console.error("Error submitting live interview turn:", err)
+            alert(err.response?.data?.message || "Failed to get AI follow-up. Please try again.")
+        } finally {
+            setIsThinking(false)
+        }
+    }
+
+    const decisionClass = verdict?.decision === 'Strong Hire' || verdict?.decision === 'Hire'
+        ? 'verdict-badge--hire'
+        : verdict?.decision === 'Lean Hire'
+        ? 'verdict-badge--lean'
+        : 'verdict-badge--no'
+
+    return (
+        <section className='live-interview-page'>
+            <div className='content-header'>
+                <h2>Live AI Mock Interview</h2>
+                <div className='live-header-controls'>
+                    {started && !verdict && (
+                        <span className='content-header__count'>
+                            Turn {Math.min(turnNumber, MAX_TURNS)} / {MAX_TURNS} {currentTopic ? `• ${currentTopic}` : ''}
+                        </span>
+                    )}
+                    <button
+                        type="button"
+                        className={`mock-clear-btn ${autoSpeak ? 'live-voice-on' : ''}`}
+                        onClick={() => {
+                            if (autoSpeak) window.speechSynthesis?.cancel()
+                            setAutoSpeak(v => !v)
+                        }}
+                    >
+                        {autoSpeak ? "🔊 Voice On" : "🔇 Muted"}
+                    </button>
+                </div>
+            </div>
+
+            {!started ? (
+                <div className='live-intro-card'>
+                    <div className='live-intro-card__badge'>Dynamic Multi-Turn Simulation</div>
+                    <h3>Ready for a live interview for {roleTitle || 'this role'}?</h3>
+                    <p>
+                        Unlike static Q&amp;A cards, the AI Interviewer will ask you a tailored opening question,
+                        <strong> listen to your spoken or typed response</strong>, and ask sharp <strong>dynamic follow-up questions</strong> based on what you actually say—ending with a Hiring Committee Verdict.
+                    </p>
+                    <button type="button" className='button primary-button live-start-btn' onClick={startInterview}>
+                        🎙️ Start 4-Turn Live Interview
+                    </button>
+                </div>
+            ) : (
+                <div className='live-arena'>
+                    <div className='live-transcript'>
+                        {messages.map((msg, idx) => (
+                            <div key={idx} className={`live-bubble live-bubble--${msg.role}`}>
+                                <div className='live-bubble__meta'>
+                                    <span>{msg.role === 'ai' ? '🤖 AI Interviewer' : '👤 You'}</span>
+                                    {msg.topic && <span className='live-bubble__topic'>{msg.topic}</span>}
+                                </div>
+                                <p className='live-bubble__text'>{msg.text}</p>
+                            </div>
+                        ))}
+
+                        {isThinking && (
+                            <div className='live-bubble live-bubble--ai live-bubble--thinking'>
+                                <div className='live-bubble__meta'><span>🤖 AI Interviewer</span></div>
+                                <p className='live-bubble__text'>Analyzing your response &amp; formulating follow-up...</p>
+                            </div>
+                        )}
+                        <div ref={chatEndRef} />
+                    </div>
+
+                    {verdict ? (
+                        <div className='verdict-card'>
+                            <div className='verdict-card__header'>
+                                <div>
+                                    <span className='verdict-card__eyebrow'>Hiring Committee Decision</span>
+                                    <span className={`verdict-badge ${decisionClass}`}>{verdict.decision}</span>
+                                </div>
+                                <div className='verdict-score'>
+                                    <span className='verdict-score__val'>{verdict.overallScore}</span>
+                                    <span className='verdict-score__pct'>/100</span>
+                                </div>
+                            </div>
+
+                            <p className='verdict-card__summary'>{verdict.summary}</p>
+
+                            <div className='verdict-metrics'>
+                                <div className='verdict-metric'>
+                                    <span>Technical Depth</span>
+                                    <strong>{verdict.technicalDepth}/10</strong>
+                                </div>
+                                <div className='verdict-metric'>
+                                    <span>Communication</span>
+                                    <strong>{verdict.communication}/10</strong>
+                                </div>
+                                <div className='verdict-metric'>
+                                    <span>Problem Solving</span>
+                                    <strong>{verdict.problemSolving}/10</strong>
+                                </div>
+                            </div>
+
+                            <div className='mock-columns'>
+                                <div className='mock-col'>
+                                    <strong>Key Strengths:</strong>
+                                    <ul>
+                                        {verdict.strengths?.map((s, i) => <li key={i}>✓ {s}</li>)}
+                                    </ul>
+                                </div>
+                                <div className='mock-col'>
+                                    <strong>Growth Areas:</strong>
+                                    <ul>
+                                        {verdict.growthAreas?.map((g, i) => <li key={i}>⚡ {g}</li>)}
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <button type="button" className='button primary-button live-restart-btn' onClick={startInterview}>
+                                ↻ Start New Live Interview
+                            </button>
+                        </div>
+                    ) : (
+                        <div className='live-input-bar'>
+                            <textarea
+                                className='mock-practice__textarea'
+                                placeholder="Click 'Speak' to answer via microphone, or type your response..."
+                                value={replyText}
+                                onChange={(e) => setReplyText(e.target.value)}
+                                rows={3}
+                                disabled={isThinking}
+                            />
+                            <div className='live-input-bar__actions'>
+                                <button
+                                    type="button"
+                                    className={`mock-mic-btn ${isListening ? 'mock-mic-btn--active' : ''}`}
+                                    onClick={toggleMic}
+                                    disabled={isThinking}
+                                >
+                                    <span className='mock-mic-dot' />
+                                    {isListening ? "Recording... (Stop)" : "🎙️ Speak"}
+                                </button>
+                                <button
+                                    type="button"
+                                    className='button primary-button mock-eval-btn'
+                                    onClick={submitReply}
+                                    disabled={isThinking || !replyText.trim()}
+                                >
+                                    {isThinking ? "Thinking..." : "Submit Answer →"}
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
             )}
         </section>
     )
@@ -587,12 +907,7 @@ const Interview = () => {
     const [isLongWait, setIsLongWait] = useState(false)
     const [isLoggingOut, setIsLoggingOut] = useState(false)
     const [currentStepIndex, setCurrentStepIndex] = useState(0)
-    const [showNotice, setShowNotice] = useState(true)
     const longWaitTimerRef = useRef(null)
-
-    const handleCloseNotice = () => {
-        setShowNotice(false)
-    }
 
     const navigate = useNavigate()
     const { handleLogout } = useAuth()
@@ -778,19 +1093,10 @@ const Interview = () => {
 
                 {/* ── Center Content ── */}
                 <main className='interview-content'>
-                    {showNotice && (
-                        <div className='free-tier-notice'>
-                            <div className='free-tier-notice__icon'>
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>
-                            </div>
-                            <div className='free-tier-notice__content'>
-                                <strong>Gemini Free Tier Notice:</strong> PrepAi is powered by the free tier of Gemini AI. During peak traffic hours, generating your interview strategy or downloading the resume PDF may occasionally time out or fail. If you experience an issue, please retry 2-3 times.
-                            </div>
-                            <button className='free-tier-notice__close' onClick={handleCloseNotice} title="Dismiss notice">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                            </button>
-                        </div>
+                    {activeNav === 'live-interview' && (
+                        <LiveInterviewView interviewId={interviewId} roleTitle={report.title} />
                     )}
+
                     {activeNav === 'technical' && (
                         <section>
                             <div className='content-header'>

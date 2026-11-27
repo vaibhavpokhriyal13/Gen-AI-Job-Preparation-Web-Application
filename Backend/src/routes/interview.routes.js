@@ -62,4 +62,11 @@ interviewRouter.post("/evaluate-answer", authMiddleware.authUser, interviewContr
  */
 interviewRouter.get("/elevator-pitch/:interviewId", authMiddleware.authUser, interviewController.getElevatorPitchController);
 
+/**
+ * @route POST /api/interview/live-turn/:interviewId
+ * @description conduct a multi-turn live AI interview with dynamic follow-ups
+ * @access private
+ */
+interviewRouter.post("/live-turn/:interviewId", authMiddleware.authUser, interviewController.liveInterviewTurnController);
+
 module.exports = interviewRouter
